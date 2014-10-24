@@ -353,7 +353,7 @@ void TileBuilder::clearAtlases(ChangeSet &theChangeRequests)
 }
 
 // Helper routine for constructing the skirt around a tile
-void TileBuilder::buildSkirt(BasicDrawable *draw,std::vector<Point3f> &pts,std::vector<TexCoord> &texCoords,float skirtFactor,bool haveElev)
+void TileBuilder::buildSkirt(BasicDrawable *draw,const Point3f &center,std::vector<Point3f> &pts,std::vector<TexCoord> &texCoords,float skirtFactor,bool haveElev)
 {
     for (unsigned int ii=0;ii<pts.size()-1;ii++)
     {
@@ -365,25 +365,29 @@ void TileBuilder::buildSkirt(BasicDrawable *draw,std::vector<Point3f> &pts,std::
         cornerTex[1] = texCoords[ii+1];
         if (haveElev)
             corners[2] = pts[ii+1].normalized();
-            else
-                corners[2] = pts[ii+1] * skirtFactor;
-                cornerTex[2] = texCoords[ii+1];
-                if (haveElev)
-                    corners[3] = pts[ii].normalized();
-                    else
-                        corners[3] = pts[ii] * skirtFactor;
-                        cornerTex[3] = texCoords[ii];
-                        
-                        // Toss in the points, but point the normal up
-                        int base = draw->getNumPoints();
-                        for (unsigned int jj=0;jj<4;jj++)
-                        {
-                            draw->addPoint(corners[jj]);
-                            Point3f norm = (pts[ii]+pts[ii+1])/2.f;
-                            draw->addNormal(norm);
-                            TexCoord texCoord = cornerTex[jj];
-                            draw->addTexCoord(-1,texCoord);
-                        }
+        else {
+            const Point3f &pt = pts[ii+1];
+            corners[2] = pt * skirtFactor + (pt - center) * (1.f - skirtFactor)/2.f;
+        }
+        cornerTex[2] = texCoords[ii+1];
+        if (haveElev)
+            corners[3] = pts[ii].normalized();
+        else {
+            const Point3f &pt = pts[ii];
+            corners[3] = pt * skirtFactor + (pt - center) * (1.f - skirtFactor)/2.f;
+        }
+        cornerTex[3] = texCoords[ii];
+        
+        // Toss in the points, but point the normal up
+        int base = draw->getNumPoints();
+        for (unsigned int jj=0;jj<4;jj++)
+        {
+            draw->addPoint(corners[jj]);
+            Point3f norm = (pts[ii]+pts[ii+1])/2.f;
+            draw->addNormal(norm);
+            TexCoord texCoord = cornerTex[jj];
+            draw->addTexCoord(-1,texCoord);
+        }
         
         // Add two triangles
         draw->addTriangle(BasicDrawable::Triangle(base+3,base+2,base+0));
@@ -453,6 +457,7 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
     CoordSystem *sceneCoordSys = coordAdapter->getCoordSystem();
     GeoCoord geoLL(coordSys->localToGeographic(Point3f(chunkLL.x(),chunkLL.y(),0.0)));
     GeoCoord geoUR(coordSys->localToGeographic(Point3f(chunkUR.x(),chunkUR.y(),0.0)));
+    Point3f center = coordAdapter->localToDisplay(CoordSystemConvert(coordSys,sceneCoordSys,Point3f((chunkLL.x()+chunkUR.x())/2.0,(chunkLL.y()+chunkUR.y())/2.0,0.0)));
     
     // Get textures (locally)
     if (texs)
@@ -743,7 +748,7 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
                     skirtLocs.push_back(locs[ix]);
                     skirtTexCoords.push_back(texCoords[ix]);
                 }
-                buildSkirt(skirtChunk,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
+                buildSkirt(skirtChunk,center,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
                 // Top skirt
                 skirtLocs.clear();
                 skirtTexCoords.clear();
@@ -752,7 +757,7 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
                     skirtLocs.push_back(locs[(sphereTessY)*(sphereTessX+1)+ix]);
                     skirtTexCoords.push_back(texCoords[(sphereTessY)*(sphereTessX+1)+ix]);
                 }
-                buildSkirt(skirtChunk,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
+                buildSkirt(skirtChunk,center,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
                 // Left skirt
                 skirtLocs.clear();
                 skirtTexCoords.clear();
@@ -761,7 +766,7 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
                     skirtLocs.push_back(locs[(sphereTessX+1)*iy+0]);
                     skirtTexCoords.push_back(texCoords[(sphereTessX+1)*iy+0]);
                 }
-                buildSkirt(skirtChunk,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
+                buildSkirt(skirtChunk,center,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
                 // right skirt
                 skirtLocs.clear();
                 skirtTexCoords.clear();
@@ -770,7 +775,7 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
                     skirtLocs.push_back(locs[(sphereTessX+1)*iy+(sphereTessX)]);
                     skirtTexCoords.push_back(texCoords[(sphereTessX+1)*iy+(sphereTessX)]);
                 }
-                buildSkirt(skirtChunk,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
+                buildSkirt(skirtChunk,center,skirtLocs,skirtTexCoords,skirtFactor,haveElev);
                 
                 if (texs && !texs->empty() && !((*texs)[0]))
                     skirtChunk->setTexId(0,(*texs)[0]->getId());
