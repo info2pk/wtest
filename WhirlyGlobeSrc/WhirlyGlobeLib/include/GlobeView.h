@@ -62,6 +62,9 @@
 /// This version avoids the limit calculations (Kind of a hack)
 - (void)setHeightAboveGlobeNoLimits:(double)newH updateWatchers:(bool)updateWatchers;
 
+/// Set the height and possibly update the watchers
+- (void)setTilt:(double)newTilt updateWatchers:(bool)updateWatchers;
+
 /// This version allows you to not update the watchers.
 - (void)setRotQuat:(Eigen::Quaterniond)rotQuat updateWatchers:(bool)updateWatchers;
 

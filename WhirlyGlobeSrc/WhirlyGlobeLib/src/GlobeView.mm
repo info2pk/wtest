@@ -81,9 +81,16 @@ using namespace Eigen;
 
 - (void)setTilt:(double)newTilt
 {
-    _tilt = newTilt;
+    [self setTilt:newTilt updateWatchers:true];
 }
-	
+
+- (void)setTilt:(double)newTilt updateWatchers:(bool)updateWatchers
+{
+    _tilt = newTilt;
+    if (updateWatchers)
+        [self runViewUpdates];
+}
+
 - (double)minHeightAboveGlobe
 {
     if (super.continuousZoom)

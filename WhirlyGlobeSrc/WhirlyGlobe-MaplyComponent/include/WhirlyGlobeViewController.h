@@ -314,6 +314,14 @@
  */
 - (void)setPosition:(MaplyCoordinate)newPos height:(float)height;
 
+/** @brief Set the center, height, heading, and tilt all at once.
+    @param newPos The geographic position (lon/lat in radians) to move to.
+    @param height Height the view point above the globe.
+    @param heading Heading from due north.
+    @param tilt Tilt from straight down.
+  */
+- (void)setPosition:(MaplyCoordinate)newPos height:(double)height heading:(double)heading tilt:(double)tilt;
+
 /** @brief Return the current center position and height.
     @param pos The center of the screen in geographic (lon/lat in radians).
     @param height The current view point's height above the globe.
