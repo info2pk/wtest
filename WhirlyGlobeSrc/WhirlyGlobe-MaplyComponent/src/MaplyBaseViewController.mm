@@ -616,7 +616,7 @@ static const float PerfOutputDelay = 15.0;
     
     // Hook it into the renderer
     ViewPlacementGenerator *vpGen = scene->getViewPlacementGenerator();
-    vpGen->addView(GeoCoord(viewTrack.loc.x,viewTrack.loc.y),viewTrack.view,viewTrack.minVis,viewTrack.maxVis);
+    vpGen->addView(GeoCoord(viewTrack.loc.x,viewTrack.loc.y),viewTrack.view,viewTrack.minVis,viewTrack.maxVis,nil,nil);
     sceneRenderer.triggerDraw = true;
     
     // And add it to the view hierarchy
@@ -696,7 +696,14 @@ static const float PerfOutputDelay = 15.0;
         vpGen->moveView(GeoCoord(coord.x,coord.y),annotate.calloutView,annotate.minVis,annotate.maxVis);
     } else
     {
-        vpGen->addView(GeoCoord(coord.x,coord.y),annotate.calloutView,annotate.minVis,annotate.maxVis);
+        if (annotate.positionBlock)
+            vpGen->addView(GeoCoord(coord.x,coord.y),annotate.calloutView,annotate.minVis,annotate.maxVis,
+                           ^(MaplyAnnotation *ann,CGRect frame)
+                           {
+                               ann.positionBlock(ann,frame);
+                           },annotate);
+        else
+            vpGen->addView(GeoCoord(coord.x,coord.y),annotate.calloutView,annotate.minVis,annotate.maxVis,nil,nil);
     }
     sceneRenderer.triggerDraw = true;
 }

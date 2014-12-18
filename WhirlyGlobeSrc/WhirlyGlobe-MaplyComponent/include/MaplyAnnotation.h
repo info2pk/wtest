@@ -57,7 +57,10 @@
 @property (nonatomic) UIView *contentView;
 
 /// @brief If set, we'll reposition the globe or map to make the annotation visible.
-/// @details If the annotation would be off screen we would normally reposition the globe or map to make it visible.  If this is et to false, we won't.
+/// @details If the annotation would be off screen we would normally reposition the globe or map to make it visible.  If this is set to false, we won't.
 @property (nonatomic) bool repositionForVisibility;
+
+/// @brief If set, we'll call this right as we reposition an annotation on the globe or map view
+@property (nonatomic,copy) void (^positionBlock)(MaplyAnnotation *annotation,CGRect frame);
 
 @end

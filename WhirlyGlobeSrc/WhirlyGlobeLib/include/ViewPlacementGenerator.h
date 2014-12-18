@@ -35,6 +35,9 @@ namespace WhirlyKit
 
 #define kViewPlacementGeneratorShared "SharedViewPlacementGenerator"
   
+/// A reposition block called when we move a view tracker
+typedef void (^PositionBlock)(id obj,CGRect frame);
+    
 /** The View Placement Generator moves UIViews around accordingly to locations in geographic coordinates.
     You'll need to both add the UIView here and add it underneath the OpenGL view.
  */
@@ -48,9 +51,9 @@ public:
     class ViewInstance
     {
     public:
-        ViewInstance() { }
-        ViewInstance(UIView *view) : view(view) { }
-        ViewInstance(WhirlyKit::GeoCoord loc,UIView *view) : loc(loc), view(view), active(true) { offset.x() = view.frame.origin.x;  offset.y() = view.frame.origin.y; }
+        ViewInstance() : posBlock(nil) { }
+        ViewInstance(UIView *view) : view(view), posBlock(nil) { }
+        ViewInstance(WhirlyKit::GeoCoord loc,UIView *view) : loc(loc), view(view), active(true), posBlock(nil) { offset.x() = view.frame.origin.x;  offset.y() = view.frame.origin.y; }
         ~ViewInstance() { }
         
         /// Sort by UIView
@@ -68,11 +71,15 @@ public:
         float minVis;
         /// Maximum visibility above globe
         float maxVis;
+        /// Optional callback for a view instance
+        PositionBlock posBlock;
+        /// Data for position block callback
+        id posBlockData;
     };
     
     /// Add a view to be tracked.
     /// You should call this from the main thread.
-    void addView(GeoCoord loc,UIView *view,float minVis,float maxVis);
+    void addView(GeoCoord loc,UIView *view,float minVis,float maxVis,PositionBlock positionBlock,id posBlockData);
 
     /// Move an existing tracked view to a new location
     void moveView(GeoCoord loc,UIView *view,float minVis,float maxVis);

@@ -38,7 +38,7 @@ ViewPlacementGenerator::~ViewPlacementGenerator()
     viewInstanceSet.clear();
 }
     
-void ViewPlacementGenerator::addView(GeoCoord loc,UIView *view,float minVis,float maxVis)
+void ViewPlacementGenerator::addView(GeoCoord loc,UIView *view,float minVis,float maxVis,PositionBlock positionBlock,id posBlockData)
 {
     // Make sure it isn't already there
     removeView(view);
@@ -46,6 +46,8 @@ void ViewPlacementGenerator::addView(GeoCoord loc,UIView *view,float minVis,floa
     ViewInstance viewInst(loc,view);
     viewInst.minVis = minVis;
     viewInst.maxVis = maxVis;
+    viewInst.posBlock = positionBlock;
+    viewInst.posBlockData = posBlockData;
     CGRect frame = view.frame;
     viewInst.offset = Point2d(frame.origin.x,frame.origin.y);
     viewInstanceSet.insert(viewInst);
@@ -206,10 +208,14 @@ void ViewPlacementGenerator::generateDrawables(WhirlyKitRendererFrameInfo *frame
                                ^{
                                    viewInst.view.hidden = false;
                                    viewInst.view.frame = CGRectMake(screenPt.x / scale + viewInst.offset.x(), screenPt.y / scale + viewInst.offset.y(), size.width, size.height);
+                                   if (viewInst.posBlock)
+                                       viewInst.posBlock(viewInst.posBlockData,viewInst.view.frame);
                                });
             } else {
                 viewInst.view.hidden = false;
                 viewInst.view.frame = CGRectMake(screenPt.x / scale + viewInst.offset.x(), screenPt.y / scale + viewInst.offset.y(), size.width, size.height);
+                if (viewInst.posBlock)
+                    viewInst.posBlock(viewInst.posBlockData,viewInst.view.frame);
             }
         } else {
             if ([NSThread currentThread] != [NSThread mainThread])
