@@ -557,9 +557,9 @@ static const float PerfOutputDelay = 15.0;
     return [interactLayer addBillboards:billboards desc:desc mode:threadMode];
 }
 
-- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors
+- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode
 {
-    return [interactLayer addSelectionVectors:vectors desc:nil];
+    return [interactLayer addSelectionVectors:vectors desc:desc mode:threadMode];
 }
 
 - (void)changeVector:(MaplyComponentObject *)compObj desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode

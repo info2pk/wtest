@@ -1283,13 +1283,21 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
 }
 
 // Add vectors that we'll only use for selection
-- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors desc:(NSDictionary *)desc
+- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode
 {
     MaplyComponentObject *compObj = [[MaplyComponentObject alloc] initWithDesc:desc];
     compObj.underConstruction = false;
     
-    NSArray *argArray = @[vectors, compObj, [NSDictionary dictionaryWithDictionary:desc], [NSNumber numberWithBool:NO], @(MaplyThreadCurrent)];
-    [self addVectorsRun:argArray];
+    NSArray *argArray = @[vectors, compObj, [NSMutableDictionary dictionaryWithDictionary:desc], [NSNumber numberWithBool:NO], @(MaplyThreadCurrent)];
+    switch (threadMode)
+    {
+        case MaplyThreadCurrent:
+            [self addVectorsRun:argArray];
+            break;
+        case MaplyThreadAny:
+            [self performSelector:@selector(addVectorsRun:) onThread:layerThread withObject:argArray waitUntilDone:NO];
+            break;
+    }
     
     return compObj;
 }

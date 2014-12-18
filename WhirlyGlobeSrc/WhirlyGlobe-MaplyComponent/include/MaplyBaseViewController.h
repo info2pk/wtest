@@ -384,9 +384,17 @@ typedef enum {MaplyThreadCurrent,MaplyThreadAny} MaplyThreadMode;
 
 /** @brief Add vectors that can be used for selections.
     @details These are MaplyVectorObject's that will show up in user selection, but won't be visible.  So if a user taps on one, you get the vector in your delegate.  Otherwise, no one will know it's there.
-    @return Returns a MaplyComponentObject, which can be used to make modifications or delete the objects created.
+ @param desc The description dictionary that controls how the selection vectors will work.  It takes the following entries.
+ 
+ |Key|Type|Description|
+ |:--|:---|:----------|
+ |kMaplyEnable|NSNumber boolean|On by default, but if off then the feature exists, but is not turned on.  It can be enabled with enableObjects:|
+ |kMaplySelectable|NSNumber boolean|Off by default.  When enabled, the vector feature will be selectable by a user.|
+ @param threadMode MaplyThreadAny is preferred and will use another thread, thus not blocking the one you're on.  MaplyThreadCurrent will make the changes immediately, blocking this thread.
+
+ @return Returns a MaplyComponentObject, which can be used to make modifications or delete the objects created.
   */
-- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors;
+- (MaplyComponentObject *)addSelectionVectors:(NSArray *)vectors desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode;
 
 /** @brief Change the representation of the given vector features.
     @details This will change how any vector features represented by the compObj look.
