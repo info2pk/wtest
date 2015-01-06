@@ -157,6 +157,7 @@ typedef std::set<QuadPagingLoadedTile *,QuadPagingLoadedTileSorter> QuadPagingLo
     pthread_mutex_init(&tileSetLock, NULL);
     _importance = 512*512;
     _flipY = true;
+    _maxTiles = 256;
     canShortCircuitImportance = false;
     maxShortCircuitLevel = -1;
     _useTargetZoomLevel = true;
@@ -192,7 +193,7 @@ typedef std::set<QuadPagingLoadedTile *,QuadPagingLoadedTileSorter> QuadPagingLo
     quadLayer = [[WhirlyKitQuadDisplayLayer alloc] initWithDataSource:self loader:self renderer:renderer];
     // A tile needs to take up this much screen space
     quadLayer.minImportance = _importance;
-    quadLayer.maxTiles = 256;
+    quadLayer.maxTiles = _maxTiles;
     
     [super.layerThread addLayer:quadLayer];
     
@@ -674,7 +675,8 @@ typedef std::set<QuadPagingLoadedTile *,QuadPagingLoadedTileSorter> QuadPagingLo
             if (tile->enable)
             {
                 tile->enable = false;
-                [toDisable addObjectsFromArray:tile->replaceCompObjs];
+                if ([tile->replaceCompObjs count] > 0)
+                    [toDisable addObjectsFromArray:tile->replaceCompObjs];
             }
         } else {
             // Disable the children
@@ -684,7 +686,8 @@ typedef std::set<QuadPagingLoadedTile *,QuadPagingLoadedTileSorter> QuadPagingLo
             if (!tile->isLoading && !tile->enable)
             {
                 tile->enable = true;
-                [toEnable addObjectsFromArray:tile->replaceCompObjs];
+                if ([tile->replaceCompObjs count] > 0)
+                    [toEnable addObjectsFromArray:tile->replaceCompObjs];
             }
         }
     } else {
@@ -695,7 +698,8 @@ typedef std::set<QuadPagingLoadedTile *,QuadPagingLoadedTileSorter> QuadPagingLo
         if (tile->enable)
         {
             tile->enable = false;
-            [toDisable addObjectsFromArray:tile->replaceCompObjs];
+            if ([tile->replaceCompObjs count] > 0)
+                [toDisable addObjectsFromArray:tile->replaceCompObjs];
         }
     }
 }

@@ -23,6 +23,7 @@
 #import "AFHTTPRequestOperation.h"
 #import "AnimationTest.h"
 #import "WeatherShader.h"
+#import "MapzenSource.h"
 
 // Simple representation of locations and name for testing
 typedef struct
@@ -93,6 +94,7 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     MaplyComponentObject *shapeSphereObj;
     MaplyComponentObject *greatCircleObj;
     MaplyComponentObject *arrowsObj;
+    MaplyComponentObject *modelsObj;
     MaplyComponentObject *screenLabelsObj;
     MaplyComponentObject *labelsObj;
     MaplyComponentObject *stickersObj;
@@ -223,6 +225,9 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     baseViewC.view.frame = self.view.bounds;
     [self addChildViewController:baseViewC];
     
+    if (globeViewC)
+        [globeViewC setTiltMinHeight:0.001 maxHeight:0.01 minTilt:1.21771169 maxTilt:0.0];
+
     // This lets us mix screen space objects with everything else
 //    baseViewC.screenObjectDrawPriorityOffset = 0;
 
@@ -280,6 +285,9 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     // Force the view to load so we can get the default switch values
     [configViewC view];
     
+    // Note: Testing
+//    [self performSelector:@selector(findHeightTest) withObject:nil afterDelay:0.0];
+
     // Maximum number of objects for the layout engine to display
 //    [baseViewC setMaxLayoutObjects:1000];
     
@@ -292,6 +300,21 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     // Test animation
 //    if (globeViewC)
 //        [self performSelector:@selector(viewAnimationTest) withObject:nil afterDelay:2.0];
+}
+
+- (void)findHeightTest
+{
+    if (mapViewC)
+    {
+        MaplyBoundingBox bbox;
+        bbox.ll = MaplyCoordinateMakeWithDegrees(7.05090689853, 47.7675500593);
+        bbox.ur = MaplyCoordinateMakeWithDegrees(8.06813647023, 49.0562323851);
+        MaplyCoordinate center = MaplyCoordinateMakeWithDegrees((7.05090689853+8.06813647023)/2, (47.7675500593+49.0562323851)/2);
+        double height = [mapViewC findHeightToViewBounds:&bbox pos:center];
+        mapViewC.height = height;
+        [mapViewC animateToPosition:center time:1.0];
+        NSLog(@"height = %f",height);
+    }    
 }
 
 // Test animation to a point with height and heading
@@ -614,6 +637,30 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     }
     
     arrowsObj = [baseViewC addShapes:arrows desc:desc];
+}
+
+// Add models
+- (void)addModels:(LocationInfo *)locations len:(int)len stride:(int)stride offset:(int)offset desc:(NSDictionary *)desc
+{
+    // Load the model
+    NSString *fullPath = [[NSBundle mainBundle] pathForResource:@"cessna" ofType:@"obj"];
+    if (!fullPath)
+        return;
+    MaplyGeomModel *model = [[MaplyGeomModel alloc] initWithObj:fullPath];
+    if (!model)
+        return;
+
+    NSMutableArray *modelInstances = [NSMutableArray array];
+    for (unsigned int ii=offset;ii<len;ii+=stride)
+    {
+        LocationInfo *loc = &locations[ii];
+        MaplyGeomModelInstance *mInst = [[MaplyGeomModelInstance alloc] init];
+        mInst.center = MaplyCoordinateMakeWithDegrees(loc->lon, loc->lat);
+        mInst.selectable = true;
+        [modelInstances addObject:mInst];
+    }
+    
+    modelsObj = [baseViewC addModelInstances:modelInstances desc:desc mode:MaplyThreadAny];
 }
 
 - (void)addLinesLon:(float)lonDelta lat:(float)latDelta color:(UIColor *)color
@@ -1103,9 +1150,10 @@ static const int NumMegaMarkers = 15000;
         layer.handleEdges = true;
         if (startupMapType == Maply2DMap)
         {
+            // Note: Debugging
             layer.useTargetZoomLevel = true;
             layer.singleLevelLoading = true;
-            layer.multiLevelLoads = @[@(-4), @(-2)];
+//            layer.multiLevelLoads = @[@(-4), @(-2)];
         }
         [baseViewC addLayer:layer];
         layer.drawPriority = 0;
@@ -1344,31 +1392,46 @@ static const int NumMegaMarkers = 15000;
             } else if (![layerName compare:kMaplyMapzenVectors])
             {
                 thisCacheDir = [NSString stringWithFormat:@"%@/mapzen-vectiles",cacheDir];
-                [MaplyMapnikVectorTiles StartRemoteVectorTilesWithURL:@"http://vector.mapzen.com/osm/all/"
-                                                                  ext:@"mapbox"
-                                                              minZoom:8
-                                                              maxZoom:14
-                                                                style:[[NSBundle mainBundle] pathForResource:@"MapzenStyles" ofType:@"json"]
-                                                                  cacheDir:thisCacheDir
-                                                                     viewC:baseViewC
-                                                                   success:
-                 ^(MaplyMapnikVectorTiles *vecTiles)
-                 {
-                     // Now for the paging layer itself
-                     MaplyQuadPagingLayer *pageLayer = [[MaplyQuadPagingLayer alloc] initWithCoordSystem:[[MaplySphericalMercator alloc] initWebStandard] delegate:vecTiles];
-                     pageLayer.numSimultaneousFetches = 4;
-                     pageLayer.flipY = false;
-                     pageLayer.importance = 1024*1024;
-                     pageLayer.useTargetZoomLevel = true;
-                     pageLayer.singleLevelLoading = true;
-                     [baseViewC addLayer:pageLayer];
-                     ovlLayers[layerName] = pageLayer;
-                 }
-                                                                   failure:
-                 ^(NSError *error){
-                     NSLog(@"Failed to load Mapnik vector tiles because: %@",error);
-                 }
-                 ];
+                MapzenSource *mzSource = [[MapzenSource alloc]
+                                          initWithBase:@"http://vector.mapzen.com/osm"
+                                          layers:@[@"water",@"earth",@"landuse",@"roads",@"buildings",@"pois",@"places"]];
+                mzSource.minZoom = 4;
+                mzSource.maxZoom = 20;
+                 // Now for the paging layer itself
+                 MaplyQuadPagingLayer *pageLayer = [[MaplyQuadPagingLayer alloc] initWithCoordSystem:[[MaplySphericalMercator alloc] initWebStandard] delegate:mzSource];
+                 pageLayer.numSimultaneousFetches = 2;
+                 pageLayer.flipY = false;
+                 pageLayer.importance = 256*256;
+                 pageLayer.useTargetZoomLevel = true;
+                 pageLayer.singleLevelLoading = true;
+                 [baseViewC addLayer:pageLayer];
+                 ovlLayers[layerName] = pageLayer;
+                
+//                [MaplyMapnikVectorTiles StartRemoteVectorTilesWithURL:@"http://vector.mapzen.com/osm/all/"
+//                                                                  ext:@"mapbox"
+//                                                              minZoom:8
+//                                                              maxZoom:14
+//                                                                style:[[NSBundle mainBundle] pathForResource:@"MapzenStyles" ofType:@"json"]
+//                                                                  cacheDir:thisCacheDir
+//                                                                     viewC:baseViewC
+//                                                                   success:
+//                 ^(MaplyMapnikVectorTiles *vecTiles)
+//                 {
+//                     // Now for the paging layer itself
+//                     MaplyQuadPagingLayer *pageLayer = [[MaplyQuadPagingLayer alloc] initWithCoordSystem:[[MaplySphericalMercator alloc] initWebStandard] delegate:vecTiles];
+//                     pageLayer.numSimultaneousFetches = 4;
+//                     pageLayer.flipY = false;
+//                     pageLayer.importance = 1024*1024;
+//                     pageLayer.useTargetZoomLevel = true;
+//                     pageLayer.singleLevelLoading = true;
+//                     [baseViewC addLayer:pageLayer];
+//                     ovlLayers[layerName] = pageLayer;
+//                 }
+//                                                                   failure:
+//                 ^(NSError *error){
+//                     NSLog(@"Failed to load Mapnik vector tiles because: %@",error);
+//                 }
+//                 ];
             }
         } else if (!isOn && layer)
         {
@@ -1508,6 +1571,20 @@ static const int NumMegaMarkers = 15000;
         {
             [baseViewC removeObject:arrowsObj];
             arrowsObj = nil;
+        }
+    }
+    
+    if ([configViewC valueForSection:kMaplyTestCategoryObjects row:kMaplyTestModels])
+    {
+        if (!modelsObj)
+        {
+            [self addModels:locations len:NumLocations stride:4 offset:3 desc:@{}];
+        }
+    } else {
+        if (modelsObj)
+        {
+            [baseViewC removeObject:modelsObj];
+            modelsObj = nil;
         }
     }
     
@@ -1745,7 +1822,18 @@ static const int NumMegaMarkers = 15000;
                 // See if there already is one
                 if (!loftPolyDict[name])
                 {
-                    MaplyComponentObject *compObj = [baseViewC addLoftedPolys:@[vecObj] key:nil cache:nil desc:@{kMaplyColor: [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.25], kMaplyLoftedPolyHeight: @(0.05), kMaplyFade: @(0.5)} mode:MaplyThreadAny];
+                    MaplyComponentObject *compObj = [baseViewC addLoftedPolys:@[vecObj] key:nil cache:nil desc:
+                                                        @{kMaplyColor: [UIColor colorWithRed:0.25 green:0.0 blue:0.0 alpha:0.25], kMaplyLoftedPolyHeight: @(0.05),
+                                                          kMaplyFade: @(0.5),
+                                                          kMaplyDrawPriority: @(kMaplyLoftedPolysDrawPriorityDefault),
+//                                                          kMaplyLoftedPolyOutline: @(YES),
+//                                                          kMaplyLoftedPolyOutlineBottom: @(YES),
+//                                                          kMaplyLoftedPolyOutlineColor: [UIColor whiteColor],
+//                                                          kMaplyLoftedPolyOutlineWidth: @(4),
+//                                                          kMaplyLoftedPolyOutlineDrawPriority: @(kMaplyLoftedPolysDrawPriorityDefault+1),
+//                                                          kMaplyLoftedPolyOutlineSide: @(YES)
+                                                          }
+                                                                         mode:MaplyThreadAny];
                     if (compObj)
                     {
                         loftPolyDict[name] = compObj;
@@ -1861,7 +1949,7 @@ static const int NumMegaMarkers = 15000;
 
 - (void)globeViewController:(WhirlyGlobeViewController *)viewC didStopMoving:(MaplyCoordinate *)corners userMotion:(bool)userMotion
 {
-//    NSLog(@"Stopped moving");
+    NSLog(@"Globe Stopped moving");
 }
 
 #pragma mark - Maply delegate
@@ -1889,7 +1977,7 @@ static const int NumMegaMarkers = 15000;
 
 - (void)maplyViewController:(MaplyViewController *)viewC didStopMoving:(MaplyCoordinate *)corners userMotion:(bool)userMotion
 {
-//    NSLog(@"Stopped moving");
+    NSLog(@"Maply Stopped moving");
 }
 
 #pragma mark - Popover Delegate

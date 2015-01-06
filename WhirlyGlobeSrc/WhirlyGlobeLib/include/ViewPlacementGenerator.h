@@ -101,6 +101,7 @@ public:
     void dumpStats();
             
 protected:
+    pthread_mutex_t viewInstanceLock;
     std::set<ViewInstance> viewInstanceSet;
 };
     

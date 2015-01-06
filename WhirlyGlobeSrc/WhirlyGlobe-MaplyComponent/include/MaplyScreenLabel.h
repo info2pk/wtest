@@ -59,8 +59,9 @@
 
 /** @brief Text can be accompanied by an optional icon image.
     @details If set, we'll put this image to the left of the text in the screen label.  The UIImage will be tracked by the view controller and reused as needed or disposed of when no longer needed.
+    @details The name had to change because Apple's private selector search is somewhat weak.
   */
-@property (nonatomic,strong) UIImage *iconImage;
+@property (nonatomic,strong) UIImage *iconImage2;
 
 /** @brief Icon size in points.
     @details If there is an icon image, this is how big it is.
@@ -102,7 +103,7 @@
 /** @brief User data object for selection
     @details When the user selects a feature and the developer gets it in their delegate, this is an object they can use to figure out what the screen label means to them.
   */
-@property (nonatomic,strong) NSObject *userObject;
+@property (nonatomic,strong) id userObject;
 
 @end
 
