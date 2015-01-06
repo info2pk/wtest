@@ -56,7 +56,7 @@ void MarkerSceneRep::enableContents(SelectionManager *selectManager,LayoutManage
     if (layoutManager)
         layoutManager->enableLayoutObjects(screenShapeIDs, enable);
 }
-    
+
 void MarkerSceneRep::clearContents(SelectionManager *selectManager,LayoutManager *layoutManager,SimpleIdentity generatorId,SimpleIdentity screenGenId,ChangeSet &changes)
 {
     // Just delete everything
@@ -368,8 +368,7 @@ SimpleIdentity MarkerManager::addMarkers(NSArray *markers,NSDictionary *desc,Cha
             if (selectManager)
             {
                 selectManager->addSelectableRect(marker.selectID,pts,markerInfo.minVis,markerInfo.maxVis,markerInfo.enable);
-                if (!markerInfo.enable)
-                    selectManager->enableSelectable(marker.selectID, false);
+                markerRep->selectIDs.insert(marker.selectID);
             }
         }
     }
