@@ -1608,10 +1608,27 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
     return compObj;
 }
 
+// Used to put geometry models with instances so we can group them
+class GeomModelInstances
+{
+public:
+    GeomModelInstances(MaplyGeomModel *model) : model(model) { }
+    
+    bool operator < (const GeomModelInstances &that) const
+    {
+        return model < that.model;
+    }
+    
+    MaplyGeomModel *model;
+    std::vector<MaplyGeomModelInstance *> instances;
+};
+typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
+
 // Called in the layer thread
 - (void)addModelInstancesRun:(NSArray *)argArray
 {
-    NSArray *modelInstances = argArray[0];
+    // Note: Debugging
+/*    NSArray *modelInstances = argArray[0];
     MaplyComponentObject *compObj = argArray[1];
     NSMutableDictionary *inDesc = argArray[2];
     MaplyThreadMode threadMode = (MaplyThreadMode)[[argArray objectAtIndex:3] intValue];
@@ -1622,18 +1639,38 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
     [self resolveShader:inDesc defaultShader:nil];
     
     GeometryManager *geomManager = (GeometryManager *)scene->getManager(kWKGeometryManager);
-    
+
+    // Sort the instances with their models
+    GeomModelInstancesSet instSort;
     for (MaplyGeomModelInstance *mInst in modelInstances)
     {
+        GeomModelInstances searchInst(mInst.model);
+        GeomModelInstancesSet::iterator it = instSort.find(&searchInst);
+        if (it != instSort.end())
+        {
+            (*it)->instances.push_back(mInst);
+        } else {
+            GeomModelInstances *newInsts = new GeomModelInstances(mInst.model);
+            newInsts->instances.push_back(mInst);
+        }
     }
+    
+    // Add each model with its group of instances
+    for (auto it : instSort)
+    {
+        geomManager->addGeometry(<#std::vector<GeometryRaw *> &geom#>, <#const std::vector<Eigen::Matrix4d> &instances#>, <#NSDictionary *desc#>, <#ChangeSet &changes#>)
+    }
+    
+    // Clean up the instances we sorted
+    for (auto it : instSort)
+        delete it;
     
     @synchronized(userObjects)
     {
         [userObjects addObject:compObj];
         compObj.underConstruction = false;
-    }
+    } */
 }
-
 
 - (MaplyComponentObject *)addModelInstances:(NSArray *)modelInstances desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode
 {
@@ -2239,14 +2276,15 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
 
 // Search for a point inside any of our vector objects
 // Runs in layer thread
-- (NSObject *)findVectorInPoint:(Point2f)pt {
-  return [self findVectorInPoint:pt inView:nil];
+- (NSArray *)findVectorsInPoint:(Point2f)pt
+{
+  return [self findVectorsInPoint:pt inView:nil];
 }
 
 
-- (NSObject *)findVectorInPoint:(Point2f)pt inView:(MaplyBaseViewController*)vc
+- (NSArray *)findVectorsInPoint:(Point2f)pt inView:(MaplyBaseViewController*)vc multi:(bool)multi
 {
-    NSObject *selObj = nil;
+    NSMutableArray *foundObjs = [NSMutableArray array];
     
     pt = [visualView unwrapCoordinate:pt];
     
@@ -2266,22 +2304,24 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
                         coord.y = pt.y()-userObj.vectorOffset.y();
                         if ([vecObj pointInAreal:coord])
                         {
-                            selObj = vecObj;
-                            break;
+                            [foundObjs addObject:vecObj];
+                            if (!multi)
+                                break;
                         } else if (vc && [vecObj pointNearLinear:coord distance:20 inViewController:vc]) {
-                            selObj = vecObj;
-                            break;
+                            [foundObjs addObject:vecObj];
+                            if (!multi)
+                                break;
                         }
                     }
                 }
                 
-                if (selObj)
+                if (!multi && [foundObjs count] > 0)
                     break;
             }
         }
     }
-    
-    return selObj;
+
+    return foundObjs;
 }
 
 - (NSObject *)getSelectableObject:(WhirlyKit::SimpleIdentity)objId
