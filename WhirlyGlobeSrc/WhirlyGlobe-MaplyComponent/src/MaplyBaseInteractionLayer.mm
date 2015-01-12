@@ -2296,7 +2296,7 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
             {
                 for (MaplyVectorObject *vecObj in userObj.vectors)
                 {
-                    if (vecObj.selectable)
+                    if (vecObj.selectable && userObj.enable)
                     {
                         // Note: Take visibility into account too
                         MaplyCoordinate coord;
