@@ -521,7 +521,7 @@ static double MAX_EXTENT = 20037508.342789244;
     for(id key in symbolizerKeys) {
       MaplyVectorTileStyle *symbolizer = [self.styleDelegate styleForUUID:key];
       NSArray *features = featureStyles[key];
-      [components addObjectsFromArray:[symbolizer buildObjects:features viewC:layer.viewC]];
+        [components addObjectsFromArray:[symbolizer buildObjects:features forTile:tileID layer:layer viewC:layer.viewC]];
     }
     
     if(self.debugLabel || self.debugOutline) {

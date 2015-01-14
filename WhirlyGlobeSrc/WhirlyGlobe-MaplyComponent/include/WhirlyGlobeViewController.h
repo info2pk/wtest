@@ -391,4 +391,10 @@
  */
 - (bool) getCurrentExtents:(MaplyBoundingBox *)bbox;
 
+/**
+  @brief Convert from a native coordinate system to display.
+  @details Convert the input coordinate from its local system to the display coordinate system.
+  */
+- (MaplyCoordinate3d) displayCoord:(MaplyCoordinate3d)localCoord coordSys:(MaplyCoordinateSystem *)coordSys;
+
 @end

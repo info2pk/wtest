@@ -239,7 +239,7 @@ SimpleIdentity LabelManager::addLabels(NSArray *labels,NSDictionary *desc,Change
     labelRenderer.coordAdapter = scene->getCoordAdapter();
     labelRenderer.labelRep = labelRep;
     labelRenderer.scene = scene;
-    labelRenderer.fontTexManager = (labelInfo.screenObject ? fontTexManager : nil);
+    labelRenderer.fontTexManager = fontTexManager;
     labelRenderer.scale = renderer.scale;
     
     // Can't use fancy strings on ios5 and we can't use dynamic texture atlases in a block

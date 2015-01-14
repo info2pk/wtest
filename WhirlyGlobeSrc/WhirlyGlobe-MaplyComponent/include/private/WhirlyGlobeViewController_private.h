@@ -23,6 +23,7 @@
 #import "WhirlyGlobeViewController.h"
 #import "MaplyBaseViewController_private.h"
 #import "WGSphericalEarthWithTexGroup_private.h"
+#import "MaplyCoordinateSystem_private.h"
 #import "GlobeDoubleTapDelegate.h"
 #import "GlobeTwoFingerTapDelegate.h"
 #import "GlobeDoubleTapDragDelegate.h"

@@ -1197,6 +1197,16 @@ using namespace WhirlyGlobe;
         return false;
 }
 
+- (MaplyCoordinate3d) displayCoord:(MaplyCoordinate3d)localCoord coordSys:(MaplyCoordinateSystem *)coordSys
+{
+    CoordSystemDisplayAdapter *coordAdapter = globeView.coordAdapter;
+    Point3d inPt(localCoord.x,localCoord.y,localCoord.z);
+    Point3d locPt = CoordSystemConvert3d(coordSys->coordSystem, coordAdapter->getCoordSystem(), inPt);
+    Point3d dispPt = coordAdapter->localToDisplay(locPt);
+    
+    return MaplyCoordinate3dMake(dispPt.x(), dispPt.y(), dispPt.z());
+}
+
 // Note: Finish writing this
 - (id)findObjectAtLocation:(CGPoint)screenPt
 {
