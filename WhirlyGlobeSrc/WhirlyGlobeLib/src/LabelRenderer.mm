@@ -515,6 +515,103 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                         _layoutObjects.push_back(layoutObject);
                     else if (screenShape)
                         _screenObjects.push_back(screenShape);
+                } else {
+                    // Calculate the text size from the draw string
+                    CGSize textSize = CGSizeMake(0,0);
+                    for (unsigned int ii=0;ii<drawStr->glyphPolys.size();ii++)
+                    {
+                        DrawableString::Rect &poly = drawStr->glyphPolys[ii];
+                        textSize.width = std::max((float)textSize.width,poly.pts[0].x());
+                        textSize.width = std::max((float)textSize.width,poly.pts[1].x());
+                        textSize.height = std::max((float)textSize.height,poly.pts[0].y());
+                        textSize.height = std::max((float)textSize.height,poly.pts[1].y());
+                    }
+
+                    // Width and height can be overriden per label
+                    float theWidth = _labelInfo.width;
+                    float theHeight = _labelInfo.height;
+                    if (label.desc)
+                    {
+                        theWidth = [label.desc floatForKey:@"width" default:theWidth];
+                        theHeight = [label.desc floatForKey:@"height" default:theHeight];
+                    }
+                    
+                    float width2,height2;
+                    if (theWidth != 0.0)
+                    {
+                        height2 = theWidth * textSize.height / ((float)2.0 * textSize.width);
+                        width2 = theWidth/2.0;
+                    } else {
+                        width2 = theHeight * textSize.width / ((float)2.0 * textSize.height);
+                        height2 = theHeight/2.0;
+                    }
+
+                    Point2f iconSize = (label.iconTexture==EmptyIdentity ? Point2f(0,0) : (label.iconSize.width == 0.0 ? Point2f(2*height2,2*height2) : Point2f(label.iconSize.width,label.iconSize.height)));
+                    
+                    Point3f norm;
+                    Point3f pts[4],iconPts[4];
+                    [label calcExtents2:width2 height2:height2 iconSize:iconSize justify:_labelInfo.justify corners:pts norm:&norm iconCorners:iconPts coordAdapter:_coordAdapter];
+                    
+                    // Work through the glyphs
+                    for (unsigned int ii=0;ii<drawStr->glyphPolys.size();ii++)
+                    {
+                        DrawableString::Rect &poly = drawStr->glyphPolys[ii];
+                        
+                        // Look for a drawable that's compatible
+                        auto it = drawables.find(poly.subTex.texId);
+                        BasicDrawable *drawable = NULL;
+                        if (it != drawables.end())
+                        {
+                            // Might haved fill this one up.  If so, flush it out.
+                            drawable = it->second;
+                            if (drawable->getNumPoints()+4 > MaxDrawablePoints || drawable->getNumTris()+2 > MaxDrawableTriangles)
+                            {
+                                drawables.erase(it);
+                                _changeRequests.push_back(new AddDrawableReq(drawable));
+                                drawable = NULL;
+                            }
+                        }
+                        
+                        // Create a new drawable if we need it
+                        if (!drawable)
+                        {
+                            drawable = new BasicDrawable("Label Manager");
+                            drawable->setProgram(_labelInfo.shaderID);
+                            drawable->setDrawOffset(_labelInfo.drawOffset);
+                            drawable->setType(GL_TRIANGLES);
+                            drawable->setColor([_labelInfo.textColor asRGBAColor]);
+                            drawable->setDrawPriority(_labelInfo.drawPriority);
+                            drawable->setVisibleRange(_labelInfo.minVis,_labelInfo.maxVis);
+                            drawable->setOnOff(_labelInfo.enable);
+                            drawable->setTexId(0, poly.subTex.texId);
+                            _labelRep->drawIDs.insert(drawable->getId());
+                            drawables[poly.subTex.texId] = drawable;
+                        }
+                        
+                        // We map directly to the glyph
+                        std::vector<TexCoord> texCoord(4);
+                        texCoord[3].u() = 0.0;  texCoord[3].v() = 1.0;
+                        texCoord[2].u() = 1.0;  texCoord[2].v() = 1.0;
+                        texCoord[1].u() = 1.0;  texCoord[1].v() = 0.0;
+                        texCoord[0].u() = 0.0;  texCoord[0].v() = 0.0;
+                        poly.subTex.processTexCoords(texCoord);
+                        
+                        // Add to the drawable we found (corresponding to a texture atlas)
+                        int vOff = drawable->getNumPoints();
+                        for (unsigned int jj=0;jj<4;jj++)
+                        {
+                            Point3f &pt = pts[jj];
+                            drawable->addPoint(pt);
+                            drawable->addNormal(norm);
+                            drawable->addTexCoord(0,texCoord[jj]);
+                            Mbr localMbr = drawable->getLocalMbr();
+                            Point3f localLoc = _coordAdapter->getCoordSystem()->geographicToLocal(label.loc);
+                            localMbr.addPoint(Point2f(localLoc.x(),localLoc.y()));
+                            drawable->setLocalMbr(localMbr);
+                        }
+                        drawable->addTriangle(BasicDrawable::Triangle(0+vOff,1+vOff,2+vOff));
+                        drawable->addTriangle(BasicDrawable::Triangle(2+vOff,3+vOff,0+vOff));
+                    }
                 }
             
                 delete drawStr;
