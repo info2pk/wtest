@@ -579,7 +579,7 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                             drawable->setProgram(_labelInfo.shaderID);
                             drawable->setDrawOffset(_labelInfo.drawOffset);
                             drawable->setType(GL_TRIANGLES);
-                            drawable->setColor([_labelInfo.textColor asRGBAColor]);
+                            drawable->setColor(RGBAColor(255,255,255,255));
                             drawable->setDrawPriority(_labelInfo.drawPriority);
                             drawable->setVisibleRange(_labelInfo.minVis,_labelInfo.maxVis);
                             drawable->setOnOff(_labelInfo.enable);
@@ -587,6 +587,8 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                             _labelRep->drawIDs.insert(drawable->getId());
                             drawables[poly.subTex.texId] = drawable;
                         }
+                        
+                        RGBAColor textColor = [theTextColor asRGBAColor];
                         
                         // We map directly to the glyph
                         std::vector<TexCoord> texCoord(4);
@@ -604,6 +606,7 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                             drawable->addPoint(pt);
                             drawable->addNormal(norm);
                             drawable->addTexCoord(0,texCoord[jj]);
+                            drawable->addColor(textColor);
                             Mbr localMbr = drawable->getLocalMbr();
                             Point3f localLoc = _coordAdapter->getCoordSystem()->geographicToLocal(label.loc);
                             localMbr.addPoint(Point2f(localLoc.x(),localLoc.y()));
