@@ -39,6 +39,11 @@ typedef enum {MaplyLabelJustifyLeft,MaplyLabelJustifyMiddle,MaplyLabelJustifyRig
   */
 @property (nonatomic,assign) CGSize size;
 
+/** @brief Rotation to apply to the label
+    @details Rotation around the origin.  Where the origin depends on the justification mode.
+  */
+@property (nonatomic,assign) double rotation;
+
 /// @brief The text to display on the globe or map at the given location.
 @property (nonatomic,strong) NSString *text;
 

@@ -79,7 +79,8 @@ using namespace WhirlyKit;
     switch (justify)
     {
         case WhirlyKitLabelLeft:
-            ll = center + theIconSize.x() * horiz - height2 * vert;
+//            ll = center + theIconSize.x() * horiz - height2 * vert;
+            ll = center;
             break;
         case WhirlyKitLabelMiddle:
             ll = center - (width2 + theIconSize.x()/2) * horiz - height2 * vert;

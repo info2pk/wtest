@@ -537,7 +537,11 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                     }
                     
                     float width2,height2;
-                    if (theWidth != 0.0)
+                    if (theWidth != 0.0 && theHeight != 0.0)
+                    {
+                        height2 = theHeight / 2.0;
+                        width2 = theWidth / 2.0;
+                    } else if (theWidth != 0.0)
                     {
                         height2 = theWidth * textSize.height / ((float)2.0 * textSize.width);
                         width2 = theWidth/2.0;
@@ -551,6 +555,18 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                     Point3f norm;
                     Point3f pts[4],iconPts[4];
                     [label calcExtents2:width2 height2:height2 iconSize:iconSize justify:_labelInfo.justify corners:pts norm:&norm iconCorners:iconPts coordAdapter:_coordAdapter];
+                    
+                    if (label.rotation != 0.0)
+                    {
+                        Affine3f rot(AngleAxisf(label.rotation, norm));
+                        Matrix4f rotMat = rot.matrix();
+                        for (unsigned int ip=0;ip<4;ip++)
+                        {
+                            Point3f &pt = pts[ip];
+                            Vector4f newPt = rotMat * Vector4f(pt.x(),pt.y(),pt.z(),1.0);
+                            pt = Point3f(newPt.x(),newPt.y(),newPt.z());
+                        }
+                    }
                     
                     // Work through the glyphs
                     for (unsigned int ii=0;ii<drawStr->glyphPolys.size();ii++)

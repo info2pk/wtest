@@ -931,6 +931,7 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
             compObj.textures.insert(tex);
         }
         wgLabel.iconTexture = tex.texID;
+        wgLabel.rotation = label.rotation;
         if (label.size.width > 0.0)
             [desc setObject:[NSNumber numberWithFloat:label.size.width] forKey:@"width"];
         if (label.size.height > 0.0)
