@@ -66,7 +66,7 @@ static const unsigned int LabelTextureAtlasSizeDefault = 512;
 /// Keep a label oriented upright on the screen
 @property (nonatomic,assign) bool keepUpright;
 /// This dictionary contains overrides for certain attributes
-///  for just this label.  Only width, height, icon, text color, and
+///  for just this label.  Only width, height, icon, text color, font, and
 ///  background color supported.
 @property (nonatomic,retain) NSDictionary *desc;
 /// If non-zero, this is the texture to use as an icon

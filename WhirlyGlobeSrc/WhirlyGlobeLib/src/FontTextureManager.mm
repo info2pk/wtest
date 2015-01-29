@@ -38,7 +38,7 @@ static const float BogusFontScale = 2.0;
 class FontManager
 {
 public:
-    FontManager(CTFontRef theFont) : font(theFont),refCount(0),color(nil),outlineColor(nil),outlineSize(0.0) { CFRetain(font); }
+    FontManager(CTFontRef theFont) : font(theFont),refCount(0),color(nil),outlineColor(nil),outlineSize(0.0) { CFRetain(font); fontBounds = CTFontGetBoundingBox(font); }
     ~FontManager()
     {
         CFRelease(font);
@@ -51,6 +51,8 @@ public:
     }
     
     CTFontRef font;
+    // Global bounding box for font glyphs
+    CGRect fontBounds;
 
     // Mapping info from glyph to location in a dynamic texture
     class GlyphInfo
@@ -64,6 +66,7 @@ public:
         CGSize size;
         CGPoint offset;
         CGPoint textureOffset;
+        CGRect bounds;
         SubTexture subTex;
         int refCount;
     };
@@ -89,13 +92,14 @@ public:
     }
 
     // Add the given glyph info
-    GlyphInfo *addGlyph(CGGlyph glyph,SubTexture subTex,CGSize size,CGPoint offset,CGPoint textureOffset)
+    GlyphInfo *addGlyph(CGGlyph glyph,SubTexture subTex,CGSize size,CGPoint offset,CGPoint textureOffset,CGRect glyphBounds)
     {
         GlyphInfo *info = new GlyphInfo(glyph);
         info->size = size;
         info->offset = offset;
         info->textureOffset = textureOffset;
         info->subTex = subTex;
+        info->bounds = glyphBounds;
         glyphs.insert(info);
         
         return info;
@@ -253,7 +257,7 @@ typedef std::set<DrawStringRep *,IdentifiableSorter> DrawStringRepSet;
 
 
 // Render the glyph into a buffer
-- (NSData *)renderGlyph:(CGGlyph)glyph font:(FontManager *)fm texSize:(CGSize &)size glyphSize:(CGSize &)glyphSize offset:(CGPoint &)offset textureOffset:(CGPoint &)textureOffset
+- (NSData *)renderGlyph:(CGGlyph)glyph font:(FontManager *)fm texSize:(CGSize &)size glyphSize:(CGSize &)glyphSize offset:(CGPoint &)offset textureOffset:(CGPoint &)textureOffset bounds:(CGRect &)outBounds
 {
     int width,height;
     
@@ -329,6 +333,7 @@ typedef std::set<DrawStringRep *,IdentifiableSorter> DrawStringRepSet;
     
     CGColorSpaceRelease(colorSpace);
     
+    outBounds = boundRect;
     return retData;
 }
             
@@ -440,8 +445,9 @@ typedef std::set<DrawStringRep *,IdentifiableSorter> DrawStringRepSet;
                 {
                     // We need to render that Glyph and add it
                     CGSize texSize,glyphSize;
+                    CGRect glyphBounds;
                     CGPoint offset,textureOffset;
-                    NSData *glyphImage = [self renderGlyph:glyph font:fm texSize:texSize glyphSize:glyphSize offset:offset textureOffset:textureOffset];
+                    NSData *glyphImage = [self renderGlyph:glyph font:fm texSize:texSize glyphSize:glyphSize offset:offset textureOffset:textureOffset bounds:glyphBounds];
                     if (glyphImage)
                     {
                         Texture *tex = new Texture("Font Texture Manager",glyphImage,false);
@@ -452,7 +458,7 @@ typedef std::set<DrawStringRep *,IdentifiableSorter> DrawStringRepSet;
                         std::vector<Texture *> texs;
                         texs.push_back(tex);
                         if (texAtlas->addTexture(texs, -1, &realSize, NULL, subTex, scene->getMemManager(), changes, 0))
-                            glyphInfo = fm->addGlyph(glyph, subTex, glyphSize, offset, textureOffset);
+                            glyphInfo = fm->addGlyph(glyph, subTex, glyphSize, offset, textureOffset, glyphBounds);
                         delete tex;
                     }
                 }
@@ -464,6 +470,9 @@ typedef std::set<DrawStringRep *,IdentifiableSorter> DrawStringRepSet;
                     CGPoint &offset = offsets[jj];
                     
                     float scale = 1.0/BogusFontScale;
+                    
+                    rect.fontBounds = fm->fontBounds;
+                    rect.glyphBounds = glyphInfo->bounds;
 
                     // Note: was -1,-1
                     rect.pts[0] = Point2f(glyphInfo->offset.x*scale-glyphInfo->textureOffset.x*scale,glyphInfo->offset.y*scale-glyphInfo->textureOffset.y*scale)+Point2f(offset.x,offset.y);

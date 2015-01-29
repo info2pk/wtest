@@ -53,10 +53,15 @@ typedef enum {MaplyLabelJustifyLeft,MaplyLabelJustifyMiddle,MaplyLabelJustifyRig
  */
 @property (nonatomic,strong) id iconImage2;
 
-/** @brief An option color override.
+/** @brief An optional color override.
     @details If set, this color will override the color passed in with the NSDictionary in the view controller's add method.
  */
 @property (nonatomic,strong) UIColor *color;
+
+/** @brief An optional font override.
+    @details If set, this font overrides what's in the NSDictionary.
+ */
+@property (nonatomic,strong) UIFont *font;
 
 /** @brief Label selectability.  On by default
     @details If set, this label can be selected by the user.  If not set, this label will never appear in selection results.

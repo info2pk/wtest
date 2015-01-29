@@ -50,6 +50,10 @@ public:
     {
     public:
         Point2f pts[2];
+        // Bounding box for just this glyph
+        CGRect glyphBounds;
+        // Master bounding box for the whole font
+        CGRect fontBounds;
         TexCoord texCoords[2];
         SubTexture subTex;
     };

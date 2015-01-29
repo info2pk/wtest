@@ -56,7 +56,7 @@ typedef std::set<LabelSceneRep *,IdentifiableSorter> LabelSceneRepSet;
 }
 
 // How a label is justified for display
-typedef enum {WhirlyKitLabelMiddle,WhirlyKitLabelLeft,WhirlyKitLabelRight} WhirlyKitLabelJustify;
+typedef enum {WhirlyKitLabelMiddle,WhirlyKitLabelLeft,WhirlyKitLabelRight,WhirlyKitLabelPlace} WhirlyKitLabelJustify;
 
 // Label spec passed around between threads
 @interface WhirlyKitLabelInfo : NSObject

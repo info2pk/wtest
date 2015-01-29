@@ -78,6 +78,7 @@ using namespace WhirlyKit;
     
     switch (justify)
     {
+        case WhirlyKitLabelPlace:
         case WhirlyKitLabelLeft:
 //            ll = center + theIconSize.x() * horiz - height2 * vert;
             ll = center;
@@ -97,6 +98,7 @@ using namespace WhirlyKit;
     // Now add the quad for the icon
     switch (justify)
     {
+        case WhirlyKitLabelPlace:
         case WhirlyKitLabelLeft:
             ll = center - height2*vert;
             break;
@@ -124,6 +126,7 @@ using namespace WhirlyKit;
     Point2f iconSizeForLabel = (useIconOffset ? theIconSize : Point2f(0,0));
     switch (justify)
     {
+        case WhirlyKitLabelPlace:
         case WhirlyKitLabelLeft:
             ll = center + iconSizeForLabel.x() * horiz - height2 * vert;
             break;
@@ -142,6 +145,7 @@ using namespace WhirlyKit;
     // Now add the quad for the icon
     switch (justify)
     {
+        case WhirlyKitLabelPlace:
         case WhirlyKitLabelLeft:
             ll = center - height2*vert;
             break;

@@ -74,6 +74,8 @@ namespace WhirlyKit
         else {
             if (![justifyStr compare:@"right"])
                 _justify = WhirlyKitLabelRight;
+            else if (![justifyStr compare:@"place"])
+                _justify = WhirlyKitLabelPlace;
         }
     }
     _drawPriority = [desc intForKey:@"drawPriority" default:LabelDrawPriority];
@@ -242,6 +244,40 @@ public:
 
 typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
 
+// This version handles the individual placement case
+// We place a single character and scale it based on its size relative to a font
+- (void)calcPlaceExtents:(WhirlyKitSingleLabel *)label width2:(float)width2 height2:(float)height2 glyph:(DrawableString::Rect &)glyph corners:(Point3f *)pts norm:(Point3f *)norm coordAdapter:(WhirlyKit::CoordSystemDisplayAdapter *)coordAdapter
+{
+    double scaleX = glyph.glyphBounds.size.width / glyph.fontBounds.size.width;
+    double scaleY = glyph.glyphBounds.size.height / glyph.fontBounds.size.height;
+    
+    // Note: Debugging
+//    NSLog(@"glyphBounds = (%f,%f), (%f,%f);  fontBounds = (%f,%f), (%f,%f)",glyph.glyphBounds.origin.x,glyph.glyphBounds.origin.y,glyph.glyphBounds.size.width,glyph.glyphBounds.size.height,glyph.fontBounds.origin.x,glyph.fontBounds.origin.y,glyph.fontBounds.size.width,glyph.fontBounds.size.height);
+    
+    Point3f center = coordAdapter->localToDisplay(coordAdapter->getCoordSystem()->geographicToLocal(label.loc));
+    Point3f up(0,0,1);
+    Point3f horiz,vert;
+    if (coordAdapter->isFlat())
+    {
+        *norm = up;
+        horiz = Point3f(1,0,0);
+        vert = Point3f(0,1,0);
+    } else {
+        *norm = center;
+        horiz = up.cross(*norm).normalized();
+        vert = norm->cross(horiz).normalized();;
+    }
+    // Take the center and then move over by an appropriate amount to start the glyph
+    Point3f ll = center +
+        2 * width2 * glyph.glyphBounds.origin.x / glyph.fontBounds.size.width * horiz +
+        2 * height2 * glyph.glyphBounds.origin.y / glyph.fontBounds.size.height * vert;
+    
+    pts[0] = ll;
+    pts[1] = ll + 2 * width2 * scaleX * horiz;
+    pts[2] = ll + 2 * width2 * scaleX * horiz + 2 * height2 * scaleY * vert;
+    pts[3] = ll + 2 * height2 * scaleY * vert;
+}
+
 - (void)renderWithFonts
 {
     NSTimeInterval curTime = CFAbsoluteTimeGetCurrent();
@@ -303,6 +339,7 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                 Point2d justifyOff(0,0);
                 switch (_labelInfo.justify)
                 {
+                    case WhirlyKitLabelPlace:
                     case WhirlyKitLabelLeft:
                         justifyOff = Point2d(0,0);
                         break;
@@ -549,13 +586,23 @@ typedef std::map<SimpleIdentity,BasicDrawable *> DrawableIDMap;
                         width2 = theHeight * textSize.width / ((float)2.0 * textSize.height);
                         height2 = theHeight/2.0;
                     }
-
-                    Point2f iconSize = (label.iconTexture==EmptyIdentity ? Point2f(0,0) : (label.iconSize.width == 0.0 ? Point2f(2*height2,2*height2) : Point2f(label.iconSize.width,label.iconSize.height)));
                     
+                    Point2f iconSize;
+
                     Point3f norm;
                     Point3f pts[4],iconPts[4];
-                    [label calcExtents2:width2 height2:height2 iconSize:iconSize justify:_labelInfo.justify corners:pts norm:&norm iconCorners:iconPts coordAdapter:_coordAdapter];
-                    
+
+                    // For placement mode we use the width and height as an ideal number for the total font size
+                    // Note: Only works for one character
+                    if (_labelInfo.justify == WhirlyKitLabelPlace)
+                    {
+                        iconSize = Point2f(0,0);
+                        [self calcPlaceExtents:label width2:width2 height2:height2 glyph:drawStr->glyphPolys[0] corners:pts norm:&norm coordAdapter:_coordAdapter];
+                    } else {
+                        iconSize = (label.iconTexture==EmptyIdentity ? Point2f(0,0) : (label.iconSize.width == 0.0 ? Point2f(2*height2,2*height2) : Point2f(label.iconSize.width,label.iconSize.height)));
+                        [label calcExtents2:width2 height2:height2 iconSize:iconSize justify:_labelInfo.justify corners:pts norm:&norm iconCorners:iconPts coordAdapter:_coordAdapter];
+                    }
+
                     if (label.rotation != 0.0)
                     {
                         Affine3f rot(AngleAxisf(label.rotation, norm));

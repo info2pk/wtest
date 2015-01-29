@@ -938,6 +938,8 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
             [desc setObject:[NSNumber numberWithFloat:label.size.height] forKey:@"height"];
         if (label.color)
             [desc setObject:label.color forKey:@"textColor"];
+        if (label.font)
+            desc[@"font"] = label.font;
         if (label.selectable)
         {
             wgLabel.isSelectable = true;
