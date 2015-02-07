@@ -39,6 +39,10 @@ using namespace WhirlyKit;
 
 @end
 
+@implementation MaplyShapePyramid
+
+@end
+
 @implementation MaplyShapeGreatCircle
 
 - (id)init

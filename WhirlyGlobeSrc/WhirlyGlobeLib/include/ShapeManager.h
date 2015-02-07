@@ -107,6 +107,20 @@ typedef std::set<ShapeSceneRep *,IdentifiableSorter> ShapeSceneRepSet;
 
 @end
 
+/// This puts a pyramid with its base at the locaton
+@interface WhirlyKitPyramid : WhirlyKitShape
+
+/// The location for the origin of the shape
+@property (nonatomic,assign) WhirlyKit::GeoCoord &loc;
+/// Height offset from the ground (in display units)
+@property (nonatomic,assign) float baseHeight;
+/// Radius in display units
+@property (nonatomic,assign) float radius;
+/// Height in display units
+@property (nonatomic,assign) float height;
+
+@end
+
 /** A linear feature (with width) that we'll draw on
  top of a globe or map.  This is different from the
  vector layer features in that it has exact locations.
