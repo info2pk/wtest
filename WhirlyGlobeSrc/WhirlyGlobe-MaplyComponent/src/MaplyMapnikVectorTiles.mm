@@ -514,7 +514,7 @@ static double MAX_EXTENT = 20037508.342789244;
         }
         tileData = nil;
       } else {
-        NSLog(@"No data for tile %d/%d/%d", flippedYTile.level, flippedYTile.x, flippedYTile.y);
+//        NSLog(@"No data for tile %d/%d/%d", flippedYTile.level, flippedYTile.x, flippedYTile.y);
       }
     }//end of iterating tile sources
     
