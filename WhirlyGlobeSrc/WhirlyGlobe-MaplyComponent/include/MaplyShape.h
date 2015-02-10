@@ -121,6 +121,35 @@ typedef MaplyShapeSphere WGShapeSphere;
 
 typedef MaplyShapeCylinder WGShapeCylinder;
 
+/** @brief Represent a pyramid on the globe or map.
+ @details This object represents a pyramid with it's base tied to the surface of the globe or map and it's top pointed outward (on the globe anyway).  The base can be offset and the overall radius and height are adjustable.
+ */
+@interface MaplyShapePyramid : MaplyShape
+
+/** @brief Center of the pyramid's base in geographic.
+ @details The x and y coordinates correspond to longitude and latitude and are in geographic (radians).
+ */
+@property (nonatomic,assign) MaplyCoordinate baseCenter;
+
+/** @brief Base height above the globe in display units.
+ @details This is an optional base offset from the globe or map.  The cylinder will be offset by this amount.  It's also in display units, like the radius.
+ */
+@property (nonatomic,assign) float baseHeight;
+
+/** @brief Radius of the pyramid in display units.
+ @details This is the radius of the pyramid, but not in geographic.  It's in display units.  Display units for the globe are based on a radius of 1.0.  Scale accordingly.  For the map, display units typically run from -PI to +PI, depending on the coordinate system.
+ */
+@property (nonatomic,assign) float radius;
+
+/** @brief Height of the pyramid in display units.
+ @details This is the height of the cylinder.  The top of the cylinder will be at baseHeight+height.  It's also in display units, like the radius.
+ */
+@property (nonatomic,assign) float height;
+
+@end
+
+typedef MaplyShapeCylinder WGShapePyramid;
+
 /** @brief Represent an great circle or great circle with height.
     @details Great circles are the shortest distance between two points on a globe.  We extend that a bit here, by adding height.  The result is a curved object that can either sit on top of the globe or rise above it.  In either case it begins and ends at the specified points on the globe.
  */

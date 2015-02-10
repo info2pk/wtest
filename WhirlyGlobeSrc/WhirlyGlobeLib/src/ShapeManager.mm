@@ -383,6 +383,112 @@ static std::vector<Point3f> circleSamples;
 
 @end
 
+// Number of samples for a pyramid.
+// Note: Make this a parameter
+static int PyramidSamples = 5;
+
+@implementation WhirlyKitPyramid
+
+- (Point3d)displayCenter:(CoordSystemDisplayAdapter *)coordAdapter
+{
+    Point3d localPt = coordAdapter->getCoordSystem()->geographicToLocal3d(_loc);
+    Point3d dispPt = coordAdapter->localToDisplay(localPt);
+    
+    return dispPt;
+}
+
+static std::vector<Point3f> pCircleSamples;
+
+// Build the geometry for a circle in display space
+- (void)makeGeometryWithBuilder:(WhirlyKit::ShapeDrawableBuilder *)regBuilder triBuilder:(WhirlyKit::ShapeDrawableBuilderTri *)triBuilder scene:(WhirlyKit::Scene *)scene selectManager:(SelectionManager *)selectManager sceneRep:(ShapeSceneRep *)sceneRep
+{
+    CoordSystemDisplayAdapter *coordAdapter = scene->getCoordAdapter();
+    
+    RGBAColor theColor = (super.useColor ? super.color : [regBuilder->getShapeInfo().color asRGBAColor]);
+    
+    Point3f localPt = coordAdapter->getCoordSystem()->geographicToLocal(_loc);
+    Point3f dispPt = coordAdapter->localToDisplay(localPt);
+    Point3f norm = coordAdapter->normalForLocal(localPt);
+    
+    // Move up by baseHeight
+    dispPt += norm * _baseHeight;
+    
+    // Construct a set of axes to build the circle around
+    Point3f up = norm;
+    Point3f xAxis,yAxis;
+    if (coordAdapter->isFlat())
+    {
+        xAxis = Point3f(1,0,0);
+        yAxis = Point3f(0,1,0);
+    } else {
+        Point3f north(0,0,1);
+        // Note: Also check if we're at a pole
+        xAxis = north.cross(up);  xAxis.normalize();
+        yAxis = up.cross(xAxis);  yAxis.normalize();
+    }
+    
+    // Generate the circle ones
+    if (pCircleSamples.empty())
+    {
+        pCircleSamples.resize(PyramidSamples);
+        for (unsigned int ii=0;ii<PyramidSamples;ii++)
+            pCircleSamples[ii] = xAxis * sinf(2*M_PI*ii/(float)(PyramidSamples-1)) + yAxis * cosf(2*M_PI*ii/(float)(PyramidSamples-1));
+    }
+    
+    // Calculate samples around the bottom
+    std::vector<Point3f> samples;
+    samples.resize(PyramidSamples);
+    for (unsigned int ii=0;ii<PyramidSamples;ii++)
+        samples[ii] =  _radius * pCircleSamples[ii] + dispPt;
+    
+    // We need the bounding box in the local coordinate system
+    // Note: This is not handling height correctly
+    Mbr shapeMbr;
+    for (unsigned int ii=0;ii<samples.size();ii++)
+    {
+        Point3f thisLocalPt = coordAdapter->displayToLocal(samples[ii]);
+        // Note: If this shape has height, this is insufficient
+        shapeMbr.addPoint(Point2f(thisLocalPt.x(),thisLocalPt.y()));
+    }
+    
+    // For the top, we offset the display point
+    Point3f topPoint = dispPt + _height * norm;
+    
+    // For the sides we'll just run things bottom to top
+    for (unsigned int ii=0;ii<PyramidSamples;ii++)
+    {
+        std::vector<Point3f> pts(3);
+        pts[0] = samples[ii];
+        pts[1] = samples[(ii+1)%samples.size()];
+        pts[2] = topPoint;
+        Point3f thisNorm = (pts[0]-pts[1]).cross(pts[2]-pts[1]);
+        thisNorm.normalize();
+        triBuilder->addConvexOutline(pts, thisNorm, theColor, shapeMbr);
+    }
+    
+    // Note: Would be nice to keep these around
+    pCircleSamples.clear();
+    
+    // Add a selection region
+    if (super.isSelectable)
+    {
+        Point3f pts[7];
+        float dist1 = _radius * sqrt2;
+        pts[0] = dispPt - dist1 * xAxis - dist1 * yAxis;
+        pts[1] = dispPt + dist1 * xAxis - dist1 * yAxis;
+        pts[2] = dispPt + dist1 * xAxis + dist1 * yAxis;
+        pts[3] = dispPt - dist1 * xAxis + dist1 * yAxis;
+        pts[4] = pts[0] + _height * norm;
+        pts[5] = pts[1] + _height * norm;
+        pts[6] = pts[2] + _height * norm;
+//        pts[7] = pts[3] + _height * norm;
+        selectManager->addSelectableRectSolid(super.selectID,pts,triBuilder->getShapeInfo().minVis,triBuilder->getShapeInfo().maxVis,triBuilder->getShapeInfo().enable);
+        sceneRep->selectIDs.insert(super.selectID);
+    }
+}
+
+@end
+
 @implementation WhirlyKitShapeLinear
 
 - (Point3d)displayCenter:(CoordSystemDisplayAdapter *)coordAdapter

@@ -1459,6 +1459,31 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
                 compObj.selectIDs.insert(newCyl.selectID);
             }
             [ourShapes addObject:newCyl];
+        } else if ([shape isKindOfClass:[MaplyShapePyramid class]])
+        {
+            MaplyShapePyramid *pyr = (MaplyShapePyramid *)shape;
+            WhirlyKitPyramid *newPyr = [[WhirlyKitPyramid alloc] init];
+            newPyr.loc.lon() = pyr.baseCenter.x;
+            newPyr.loc.lat() = pyr.baseCenter.y;
+            newPyr.baseHeight = pyr.baseHeight;
+            newPyr.radius = pyr.radius;
+            newPyr.height = pyr.height;
+            if (pyr.color)
+            {
+                newPyr.useColor = true;
+                RGBAColor color = [pyr.color asRGBAColor];
+                newPyr.color = color;
+            }
+            if (pyr.selectable)
+            {
+                newPyr.isSelectable = true;
+                newPyr.selectID = Identifiable::genId();
+                pthread_mutex_lock(&selectLock);
+                selectObjectSet.insert(SelectObject(newPyr.selectID,pyr));
+                pthread_mutex_unlock(&selectLock);
+                compObj.selectIDs.insert(newPyr.selectID);
+            }
+            [ourShapes addObject:newPyr];
         } else if ([shape isKindOfClass:[MaplyShapeGreatCircle class]])
         {
             MaplyShapeGreatCircle *gc = (MaplyShapeGreatCircle *)shape;
