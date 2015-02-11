@@ -232,8 +232,30 @@ bool DynamicTexture::findRegion(int sizeX,int sizeY,Region &region)
     toClear = releasedRegions;
     releasedRegions.clear();
     pthread_mutex_unlock(&regionLock);
+    
+    // Mark the region cells as cleared and clear out the actual bytes in the texture
+    int blankDataX = 0, blankDataY = 0;
+    unsigned char *blankData = NULL;
     for (unsigned int ii=0;ii<toClear.size();ii++)
+    {
+        const Region &region = toClear[ii];
+        int width = (region.ex-region.sx+1)*cellSize, height = (region.ey-region.sy+1)*cellSize;
+        if (width*height > blankDataX*blankDataY)
+        {
+            if (blankData)
+                free(blankData);
+            blankData = (unsigned char *)malloc(width*height*4);
+            blankDataX = width;
+            blankDataY = height;
+            bzero(blankData, width*height*4);
+        }
+        glBindTexture(GL_TEXTURE_2D, glId);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, region.sx*cellSize, region.sy*cellSize, width, height, format, type, blankData);
+        glBindTexture(GL_TEXTURE_2D, 0);
         setRegion(toClear[ii], false);
+    }
+    if (blankData)
+        free(blankData);
     
     // Now look for a region that'll fit
     // Look for a spot big enough
