@@ -338,6 +338,24 @@ static bool trackConnections = false;
     return [_tileInfo validTile:tileID bbox:bbox];
 }
 
+- (void)tileUnloaded:(MaplyTileID)tileID
+{
+    if ([_delegate respondsToSelector:@selector(remoteTileSource:tileUnloaded:)])
+        [_delegate remoteTileSource:self tileUnloaded:tileID];
+}
+
+- (void)tileWasEnabled:(MaplyTileID)tileID
+{
+    if ([_delegate respondsToSelector:@selector(remoteTileSource:tileEnabled:)])
+        [_delegate remoteTileSource:self tileEnabled:tileID];
+}
+
+- (void)tileWasDisabled:(MaplyTileID)tileID
+{
+    if ([_delegate respondsToSelector:@selector(remoteTileSource:tileDisabled:)])
+        [_delegate remoteTileSource:self tileDisabled:tileID];
+}
+
 // Clear out the operation associated with a tile
 - (void)clearTile:(MaplyTileID)tileID
 {
@@ -379,7 +397,14 @@ static bool trackConnections = false;
             {
                 numConnections--;
             }
-            return [NSData dataWithContentsOfFile:fileName];
+            NSData *tileData = [NSData dataWithContentsOfFile:fileName];
+            if (tileData)
+            {
+                if ([_delegate respondsToSelector:@selector(remoteTileSource:modifyTileReturn:forTile:)])
+                {
+                    tileData = [_delegate remoteTileSource:self modifyTileReturn:tileData forTile:tileID];
+                }
+            }
         }
         
     }
@@ -400,6 +425,9 @@ static bool trackConnections = false;
         // Let's also write it back out for the cache
         if (_tileInfo.cacheDir && tileData)
             [tileData writeToFile:[_tileInfo fileNameForTile:tileID] atomically:YES];
+        
+        if ([_delegate respondsToSelector:@selector(remoteTileSource:modifyTileReturn:forTile:)])
+            tileData = [_delegate remoteTileSource:self modifyTileReturn:tileData forTile:tileID];
         
         if (trackConnections)
             @synchronized([MaplyRemoteTileSource class])
@@ -483,12 +511,15 @@ static bool trackConnections = false;
                     if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(remoteTileSource:tileDidLoad:)])
                         [weakSelf.delegate remoteTileSource:weakSelf tileDidLoad:tileID];
                     
-                    // Let the paging layer know about it
-                    [layer loadedImages:imgData forTile:tileID];
-
                     // Let's also write it back out for the cache
                     if (weakSelf.tileInfo.cacheDir)
                         [imgData writeToFile:fileName atomically:YES];
+
+                    if ([_delegate respondsToSelector:@selector(remoteTileSource:modifyTileReturn:forTile:)])
+                        imgData = [_delegate remoteTileSource:self modifyTileReturn:imgData forTile:tileID];
+
+                    // Let the paging layer know about it
+                    [layer loadedImages:imgData forTile:tileID];
                     
                     [weakSelf clearTile:tileID];
                 }

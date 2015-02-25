@@ -33,7 +33,7 @@
 #import "MaplyCoordinateSystem_private.h"
 #import "MaplyTexture_private.h"
 #import "MaplyMatrix_private.h"
-#import "MaplyGeomModel.h"
+#import "MaplyGeomModel_private.h"
 
 using namespace Eigen;
 using namespace WhirlyKit;
@@ -1650,13 +1650,21 @@ public:
     MaplyGeomModel *model;
     std::vector<MaplyGeomModelInstance *> instances;
 };
-typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
+struct GeomModelInstancesCmp
+{
+    bool operator ()(const GeomModelInstances *a,const GeomModelInstances *b)
+    {
+        return *(a) < *(b);
+    }
+};
+typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelInstancesSet;
 
 // Called in the layer thread
 - (void)addModelInstancesRun:(NSArray *)argArray
 {
-    // Note: Debugging
-/*    NSArray *modelInstances = argArray[0];
+    CoordSystemDisplayAdapter *coordAdapter = scene->getCoordAdapter();
+    CoordSystem *coordSys = coordAdapter->getCoordSystem();
+    NSArray *modelInstances = argArray[0];
     MaplyComponentObject *compObj = argArray[1];
     NSMutableDictionary *inDesc = argArray[2];
     MaplyThreadMode threadMode = (MaplyThreadMode)[[argArray objectAtIndex:3] intValue];
@@ -1672,21 +1680,128 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
     GeomModelInstancesSet instSort;
     for (MaplyGeomModelInstance *mInst in modelInstances)
     {
-        GeomModelInstances searchInst(mInst.model);
-        GeomModelInstancesSet::iterator it = instSort.find(&searchInst);
-        if (it != instSort.end())
+        if (mInst.model)
         {
-            (*it)->instances.push_back(mInst);
-        } else {
-            GeomModelInstances *newInsts = new GeomModelInstances(mInst.model);
-            newInsts->instances.push_back(mInst);
+            GeomModelInstances searchInst(mInst.model);
+            GeomModelInstancesSet::iterator it = instSort.find(&searchInst);
+            if (it != instSort.end())
+            {
+                (*it)->instances.push_back(mInst);
+            } else {
+                GeomModelInstances *newInsts = new GeomModelInstances(mInst.model);
+                newInsts->instances.push_back(mInst);
+                instSort.insert(newInsts);
+            }
         }
     }
     
     // Add each model with its group of instances
-    for (auto it : instSort)
+    if (geomManager)
     {
-        geomManager->addGeometry(<#std::vector<GeometryRaw *> &geom#>, <#const std::vector<Eigen::Matrix4d> &instances#>, <#NSDictionary *desc#>, <#ChangeSet &changes#>)
+        ChangeSet changes;
+        for (auto it : instSort)
+        {
+            // Set up the textures and convert the geometry
+            MaplyGeomModel *model = it->model;
+            
+            // Add the textures
+            std::vector<std::string> texFileNames;
+            [model getTextureFileNames:texFileNames];
+            std::vector<SimpleIdentity> texIDMap(texFileNames.size());
+            int whichTex = 0;
+            for (const std::string &texFileName : texFileNames)
+            {
+                MaplyTexture *tex = [self addImage:[UIImage imageNamed:[NSString stringWithFormat:@"%s",texFileName.c_str()]] imageFormat:MaplyImage4Layer8Bit mode:threadMode];
+                if (tex)
+                {
+                    compObj.textures.insert(tex);
+                    texIDMap[whichTex] = tex.texID;
+                } else {
+                    texIDMap[whichTex] = EmptyIdentity;
+                }
+                whichTex++;
+            }
+            
+            // Convert the geometry and map the texture IDs
+            std::vector<WhirlyKit::GeometryRaw> rawGeom;
+            [model asRawGeometry:rawGeom withTexMapping:texIDMap];
+            
+            // Convert the instances
+            std::vector<GeometryInstance> matInst;
+            for (unsigned int ii=0;ii<it->instances.size();ii++)
+            {
+                MaplyGeomModelInstance *modelInst = it->instances[ii];
+                Matrix4d localMat = localMat.Identity();
+
+                // Local transformation, before the placement
+                if (modelInst.transform)
+                    localMat = modelInst.transform.mat;
+                
+                // Add in the placement
+                Point3d localPt = coordSys->geographicToLocal(Point2d(modelInst.center.x,modelInst.center.y));
+                Point3d dispLoc = coordAdapter->localToDisplay(Point3d(localPt.x(),localPt.y(),modelInst.center.z));
+                Point3d norm = coordAdapter->normalForLocal(localPt);
+                
+                // Construct a set of axes to build the shape around
+                Point3d xAxis,yAxis;
+                if (coordAdapter->isFlat())
+                {
+                    xAxis = Point3d(1,0,0);
+                    yAxis = Point3d(0,1,0);
+                } else {
+                    Point3d north(0,0,1);
+                    // Note: Also check if we're at a pole
+                    xAxis = north.cross(norm);  xAxis.normalize();
+                    yAxis = norm.cross(xAxis);  yAxis.normalize();
+                }
+                
+                // Set up a shift matrix that moves coordinate to the right orientation on the globe (or not)
+                //  and shifts it to the correct position
+                Matrix4d shiftMat;
+                shiftMat(0,0) = xAxis.x();
+                shiftMat(0,1) = yAxis.x();
+                shiftMat(0,2) = norm.x();
+                shiftMat(0,3) = dispLoc.x();
+                
+                shiftMat(1,0) = xAxis.y();
+                shiftMat(1,1) = yAxis.y();
+                shiftMat(1,2) = norm.y();
+                shiftMat(1,3) = dispLoc.y();
+                
+                shiftMat(2,0) = xAxis.z();
+                shiftMat(2,1) = yAxis.z();
+                shiftMat(2,2) = norm.z();
+                shiftMat(2,3) = dispLoc.z();
+                
+                shiftMat(3,0) = 0.0;
+                shiftMat(3,1) = 0.0;
+                shiftMat(3,2) = 0.0;
+                shiftMat(3,3) = 1.0;
+
+                localMat = shiftMat * localMat;
+
+                GeometryInstance thisInst;
+                thisInst.mat = localMat;
+                thisInst.colorOverride = modelInst.colorOverride != nil;
+                if (thisInst.colorOverride)
+                    thisInst.color = [modelInst.colorOverride asRGBAColor];
+                thisInst.selectable = modelInst.selectable;
+                if (thisInst.selectable)
+                {
+                    compObj.selectIDs.insert(thisInst.selectable);
+                    pthread_mutex_lock(&selectLock);
+                    selectObjectSet.insert(SelectObject(thisInst.getId(),modelInst));
+                    pthread_mutex_unlock(&selectLock);
+                }
+                matInst.push_back(thisInst);
+            }
+            
+            SimpleIdentity geomID = geomManager->addGeometry(rawGeom, matInst, inDesc, changes);
+            if (geomID != EmptyIdentity)
+                compObj.geomIDs.insert(geomID);
+        }
+        
+        [self flushChanges:changes mode:threadMode];
     }
     
     // Clean up the instances we sorted
@@ -1697,7 +1812,7 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
     {
         [userObjects addObject:compObj];
         compObj.underConstruction = false;
-    } */
+    }
 }
 
 - (MaplyComponentObject *)addModelInstances:(NSArray *)modelInstances desc:(NSDictionary *)desc mode:(MaplyThreadMode)threadMode
@@ -2092,6 +2207,7 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
     SphericalChunkManager *chunkManager = (SphericalChunkManager *)scene->getManager(kWKSphericalChunkManager);
     LoftManager *loftManager = (LoftManager *)scene->getManager(kWKLoftedPolyManager);
     BillboardManager *billManager = (BillboardManager *)scene->getManager(kWKBillboardManager);
+    GeometryManager *geomManager = (GeometryManager *)scene->getManager(kWKGeometryManager);
 
     ChangeSet changes;
         
@@ -2128,6 +2244,8 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
                     chunkManager->removeChunks(userObj.chunkIDs, changes);
                 if (billManager && !userObj.billIDs.empty())
                     billManager->removeBillboards(userObj.billIDs, changes);
+                if (geomManager && !userObj.geomIDs.empty())
+                    geomManager->removeGeometry(userObj.geomIDs, changes);
                 
                 // And associated textures
                 for (std::set<MaplyTexture *>::iterator it = userObj.textures.begin();
@@ -2208,6 +2326,7 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
     SphericalChunkManager *chunkManager = (SphericalChunkManager *)scene->getManager(kWKSphericalChunkManager);
     BillboardManager *billManager = (BillboardManager *)scene->getManager(kWKBillboardManager);
     LoftManager *loftManager = (LoftManager *)scene->getManager(kWKLoftedPolyManager);
+    GeometryManager *geomManager = (GeometryManager *)scene->getManager(kWKGeometryManager);
 
     ChangeSet changes;
     for (MaplyComponentObject *compObj in theObjs)
@@ -2235,6 +2354,8 @@ typedef std::set<GeomModelInstances *> GeomModelInstancesSet;
                 billManager->enableBillboards(compObj.billIDs, enable, changes);
             if (loftManager && !compObj.loftIDs.empty())
                 loftManager->enableLoftedPolys(compObj.loftIDs, enable, changes);
+            if (geomManager && !compObj.geomIDs.empty())
+                geomManager->enableGeometry(compObj.geomIDs, enable, changes);
             if (chunkManager && !compObj.chunkIDs.empty())
             {
                 for (SimpleIDSet::iterator it = compObj.chunkIDs.begin();

@@ -39,7 +39,8 @@ using namespace WhirlyKit;
     _markerSize = 10.0;
     _mapScaleScale = 1.0;
     _dashPatternScale = 1.0;
-    _useWideVectors = true;
+    // Note: Debugging
+    _useWideVectors = false;
     _wideVecCuttoff = 0.0;
     _oldVecWidthScale = 1.0;
     _selectable = false;
@@ -123,7 +124,7 @@ using namespace WhirlyKit;
     }
 }
 
-- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID layer:(MaplyQuadPagingLayer *)layer viewC:(MaplyBaseViewController *)viewC;
+- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID viewC:(MaplyBaseViewController *)viewC
 {
     return nil;
 }

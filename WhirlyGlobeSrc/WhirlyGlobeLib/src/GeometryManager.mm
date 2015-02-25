@@ -159,48 +159,68 @@ void GeometryRaw::estimateSize(int &numPts,int &numTris)
     numPts = pts.size();
     numTris = triangles.size();
 }
+    
+// Calculate bounding box
+void GeometryRaw::calcBounds(Point3d &ll,Point3d &ur)
+{
+    ll.x() = MAXFLOAT;  ll.y() = MAXFLOAT;  ll.z() = MAXFLOAT;
+    ur.x() = -MAXFLOAT;  ur.y() = -MAXFLOAT;  ur.z() = -MAXFLOAT;
+    
+    for (const auto pt : pts)
+    {
+        ll.x() = std::min(ll.x(),pt.x());
+        ll.y() = std::min(ll.y(),pt.y());
+        ll.z() = std::min(ll.z(),pt.z());
+        ur.x() = std::max(ur.x(),pt.x());
+        ur.y() = std::max(ur.y(),pt.y());
+        ur.z() = std::max(ur.z(),pt.z());
+    }
+}
 
-void GeometryRaw::buildDrawable(BasicDrawable *draw,const Eigen::Matrix4d &mat)
+void GeometryRaw::buildDrawables(std::vector<BasicDrawable *> &draws,const Eigen::Matrix4d &mat,const RGBAColor *colorOverride)
 {
     if (!isValid())
         return;
     
-    switch (type)
-    {
-        case WhirlyKitGeometryLines:
-            draw->setType(GL_LINES);
-            break;
-        case WhirlyKitGeometryTriangles:
-            draw->setType(GL_TRIANGLES);
-            break;
-        default:
-            break;
-    }
-    draw->setTexId(0,texId);
-    for (unsigned int ii=0;ii<pts.size();ii++)
-    {
-        const Point3d &pt = pts[ii];
-        Vector4d outPt = mat * Eigen::Vector4d(pt.x(),pt.y(),pt.z(),1.0);
-        Point3d newPt(outPt.x()/outPt.w(),outPt.y()/outPt.w(),outPt.z()/outPt.w());
-        draw->addPoint(newPt);
-        if (!norms.empty())
-        {
-            const Point3d &norm = norms[ii];
-            // Note: Not the right way to transform normals
-            Vector4d projNorm = mat * Eigen::Vector4d(norm.x(),norm.y(),norm.z(),0.0);
-            Point3d newNorm(projNorm.x(),projNorm.y(),projNorm.z());
-            newNorm.normalize();
-            draw->addNormal(newNorm);
-        }
-        if (texId != EmptyIdentity)
-            draw->addTexCoord(0,texCoords[ii]);
-        if (!colors.empty())
-            draw->addColor(colors[ii]);
-    }
+    BasicDrawable *draw = NULL;
     for (unsigned int ii=0;ii<triangles.size();ii++)
     {
         RawTriangle tri = triangles[ii];
-        draw->addTriangle(BasicDrawable::Triangle(tri.verts[0],tri.verts[1],tri.verts[2]));
+        // See if we need a new drawable
+        if (!draw || draw->getNumPoints() + 3 > MaxDrawablePoints || draw->getNumTris() + 1 > MaxDrawableTriangles)
+        {
+            draw = new BasicDrawable("Raw Geometry");
+            if (colorOverride)
+                draw->setColor(*colorOverride);
+            draw->setType(GL_TRIANGLES);
+            draw->setTexId(0,texId);
+            draws.push_back(draw);
+        }
+        
+        // Add the triangle by copying its vertices (meh)
+        int baseVert = draw->getNumPoints();
+        for (unsigned int jj=0;jj<3;jj++)
+        {
+            const Point3d &pt = pts[tri.verts[jj]];
+            Vector4d outPt = mat * Eigen::Vector4d(pt.x(),pt.y(),pt.z(),1.0);
+            Point3d newPt(outPt.x()/outPt.w(),outPt.y()/outPt.w(),outPt.z()/outPt.w());
+            draw->addPoint(newPt);
+            if (!norms.empty())
+            {
+                const Point3d &norm = norms[tri.verts[jj]];
+                // Note: Not the right way to transform normals
+                Vector4d projNorm = mat * Eigen::Vector4d(norm.x(),norm.y(),norm.z(),0.0);
+                Point3d newNorm(projNorm.x(),projNorm.y(),projNorm.z());
+                newNorm.normalize();
+                draw->addNormal(newNorm);
+            }
+            if (texId != EmptyIdentity)
+                draw->addTexCoord(0,texCoords[tri.verts[jj]]);
+            if (!colors.empty() && !colorOverride)
+                draw->addColor(colors[tri.verts[jj]]);
+        }
+        
+        draw->addTriangle(BasicDrawable::Triangle(baseVert,baseVert+1,baseVert+2));
     }
 }
     
@@ -218,20 +238,24 @@ GeometryManager::~GeometryManager()
     sceneReps.clear();
 }
     
-
-
-SimpleIdentity GeometryManager::addGeometry(std::vector<GeometryRaw *> &geom,const std::vector<Eigen::Matrix4d> &instances,NSDictionary *desc,ChangeSet &changes)
+SimpleIdentity GeometryManager::addGeometry(std::vector<GeometryRaw> &geom,const std::vector<GeometryInstance> &instances,NSDictionary *desc,ChangeSet &changes)
 {
     SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
     GeomSceneRep *sceneRep = new GeomSceneRep();
     
     GeomInfo *geomInfo = [[GeomInfo alloc] initWithDesc:desc];
 
+    // Calculate the bounding box for the whole thing
+    Point3d ll,ur;
+
     // Sort the geometry by type and texture
     std::vector<std::vector<GeometryRaw *>> sortedGeom;
     for (unsigned int ii=0;ii<geom.size();ii++)
     {
-        GeometryRaw *raw = geom[ii];
+        GeometryRaw *raw = &geom[ii];
+        
+        raw->calcBounds(ll, ur);
+        
         bool found = false;
         for (unsigned int jj=0;jj<sortedGeom.size();jj++)
         {
@@ -251,31 +275,53 @@ SimpleIdentity GeometryManager::addGeometry(std::vector<GeometryRaw *> &geom,con
         }
     }
     
-    // Convert the sorted lists of geometry into drawables
-    for (unsigned int ii=0;ii<sortedGeom.size();ii++)
+    // Work through the model instances
+    for (unsigned int ii=0;ii<instances.size();ii++)
     {
-        BasicDrawable *draw = NULL;
-        std::vector<GeometryRaw *> &sg = sortedGeom[ii];
-        for (unsigned int jj=0;jj<sg.size();jj++)
+        const GeometryInstance &inst = instances[ii];
+        Vector4d center = inst.mat * Vector4d(0,0,0,1);
+        center.x() /= center.w();  center.y() /= center.w();  center.z() /= center.w();
+        Eigen::Affine3d transBack(Eigen::Translation3d(-center.x(),-center.y(),-center.z()));
+        Matrix4d transBackMat = transBack.matrix();
+        Matrix4d instMat = transBackMat * inst.mat;
+        
+        // Convert the sorted lists of geometry into drawables
+        for (unsigned int jj=0;jj<sortedGeom.size();jj++)
         {
-            GeometryRaw *raw = sg[jj];
-            int numPts,numTris;
-            raw->estimateSize(numPts, numTris);
-            if (!draw || (draw->getNumPoints() + numPts > MaxDrawablePoints) ||
-                (draw->getNumTris() + numTris > MaxDrawableTriangles))
+            std::vector<GeometryRaw *> &sg = sortedGeom[jj];
+            for (unsigned int kk=0;kk<sg.size();kk++)
             {
-                draw = new BasicDrawable("Geometry Manager");
-                draw->setType((raw->type == WhirlyKitGeometryLines ? GL_LINES : GL_TRIANGLES));
-                draw->setOnOff(geomInfo.enable);
-                draw->setColor([geomInfo.color asRGBAColor]);
-                draw->setVisibleRange(geomInfo.minVis, geomInfo.maxVis);
-                draw->setDrawPriority(geomInfo.drawPriority);
-                changes.push_back(new AddDrawableReq(draw));
+                std::vector<BasicDrawable *> draws;
+                GeometryRaw *raw = sg[kk];
+                raw->buildDrawables(draws,instMat,(inst.colorOverride ? &inst.color : NULL));
+                
+                // Set the various parameters and store the drawables created
+                for (unsigned int ll=0;ll<draws.size();ll++)
+                {
+                    BasicDrawable *draw = draws[ll];
+                    draw->setType((raw->type == WhirlyKitGeometryLines ? GL_LINES : GL_TRIANGLES));
+                    draw->setOnOff(geomInfo.enable);
+//                    draw->setColor([geomInfo.color asRGBAColor]);
+                    draw->setVisibleRange(geomInfo.minVis, geomInfo.maxVis);
+                    draw->setDrawPriority(geomInfo.drawPriority);
+                    draw->setRequestZBuffer(true);
+                    draw->setWriteZBuffer(true);
+                    Eigen::Affine3d trans(Eigen::Translation3d(center.x(),center.y(),center.z()));
+                    Matrix4d transMat = trans.matrix();
+                    draw->setMatrix(&transMat);
+                    sceneRep->drawIDs.insert(draw->getId());
+                    changes.push_back(new AddDrawableReq(draw));
+                }
             }
-            
-            // Note: Debugging
-//            raw->buildDrawable(draw);
-            // Note: Do the selection manager
+        }
+        
+        // Note: Not sharing drawables between instances
+        
+        // Add a selection box for each instance
+        if (inst.selectable)
+        {
+            selectManager->addPolytopeFromBox(inst.getId(), ll, ur, inst.mat, geomInfo.minVis, geomInfo.maxVis, geomInfo.enable);
+            sceneRep->selectIDs.insert(inst.getId());
         }
     }
     

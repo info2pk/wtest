@@ -73,8 +73,8 @@ using namespace Eigen;
         // If this is going to end, let people know when
         if (maxTime != MAXFLOAT)
         {
-            Quaterniond endRot = [self rotForTime:maxTime];
-            AnimateViewMomentumMessage *msg = [[AnimateViewMomentumMessage alloc] initWithGlobeView:globeView rot:endRot time:startDate+maxTime];
+//            Quaterniond endRot = [self rotForTime:maxTime];
+//            AnimateViewMomentumMessage *msg = [[AnimateViewMomentumMessage alloc] initWithGlobeView:globeView rot:endRot time:startDate+maxTime];
         }
     }
     

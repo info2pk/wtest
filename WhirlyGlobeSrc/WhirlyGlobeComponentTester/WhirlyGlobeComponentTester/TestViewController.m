@@ -246,8 +246,8 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
     // Set the background color for the globe
     if (globeViewC)
         // Note: Debugging
-        baseViewC.clearColor = [UIColor colorWithWhite:0.8 alpha:1.0];
-//    baseViewC.clearColor = [UIColor blackColor];
+//        baseViewC.clearColor = [UIColor colorWithWhite:0.8 alpha:1.0];
+    baseViewC.clearColor = [UIColor blackColor];
     else
         baseViewC.clearColor = [UIColor whiteColor];
         
@@ -651,16 +651,27 @@ typedef enum {HighPerformance,LowPerformance} PerformanceMode;
         return;
 
     NSMutableArray *modelInstances = [NSMutableArray array];
+    // We need to scale the models down to display space.  They start out in meters.
+    // Note: Changes this to 1000.0/6371000.0 if you can't find the models
+    MaplyMatrix *scaleMat = [[MaplyMatrix alloc] initWithScale:1.0/6371000.0];
+    // Then we need to rotate around the X axis to get the model pointed up
+    MaplyMatrix *rotMat = [[MaplyMatrix alloc] initWithAngle:M_PI/2.0 axisX:1.0 axisY:0.0 axisZ:0.0];
+    // Combine the scale and rotation
+    MaplyMatrix *localMat = [rotMat multiplyWith:scaleMat];
     for (unsigned int ii=offset;ii<len;ii+=stride)
     {
         LocationInfo *loc = &locations[ii];
         MaplyGeomModelInstance *mInst = [[MaplyGeomModelInstance alloc] init];
-        mInst.center = MaplyCoordinateMakeWithDegrees(loc->lon, loc->lat);
+        mInst.model = model;
+        mInst.transform = localMat;
+        MaplyCoordinate loc2d = MaplyCoordinateMakeWithDegrees(loc->lon, loc->lat);
+        // Put it 1km above the earth
+        mInst.center = MaplyCoordinate3dMake(loc2d.x, loc2d.y, 1000);
         mInst.selectable = true;
         [modelInstances addObject:mInst];
     }
     
-    modelsObj = [baseViewC addModelInstances:modelInstances desc:desc mode:MaplyThreadAny];
+    modelsObj = [baseViewC addModelInstances:modelInstances desc:desc mode:MaplyThreadCurrent];
 }
 
 - (void)addLinesLon:(float)lonDelta lat:(float)latDelta color:(UIColor *)color
@@ -1327,18 +1338,20 @@ static const int NumMegaMarkers = 15000;
             } else if (![layerName compare:kMaplyTestMapboxStreets])
             {
                 self.title = @"Mapbox Vector Streets";
+                // Note: Debugging
+                thisCacheDir = nil;
                 thisCacheDir = [NSString stringWithFormat:@"%@/mapbox-streets-vectiles",cacheDir];
-                [MaplyMapnikVectorTiles StartRemoteVectorTilesWithURL:@"https://b.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/" ext:@"vector.pbf" minZoom:0 maxZoom:14 style:[[NSBundle mainBundle] pathForResource:@"osm-bright" ofType:@"xml"] cacheDir:thisCacheDir viewC:baseViewC success:
+                // You need your own access token here
+                [MaplyMapnikVectorTiles StartRemoteVectorTilesWithTileSpec:@"https://a.tiles.mapbox.com/v4/mapbox.mapbox-terrain-v2,mapbox.mapbox-streets-v6.json" accessToken:@"" style:[[NSBundle mainBundle] pathForResource:@"" ofType:@"xml"] styleType:MapnikXMLStyle cacheDir:thisCacheDir viewC:baseViewC
+                 success:
                  ^(MaplyMapnikVectorTiles *vecTiles)
                  {
-                     // You need your own access token here
-                     vecTiles.accessToken = @"pk.eyJ1IjoibW91c2ViaXJkIiwiYSI6IlBYR1B2WVUifQ.BHURUUNbQPsbQqUj_Ej7Jw";
                      // Don't load the lowest levels for the globe
-//                     if (globeViewC)
-//                         vecTiles.minZoom = 5;
+                     if (globeViewC)
+                         vecTiles.minZoom = 5;
                      
                      // Note: These are set after the MapnikStyleSet has already been initialized
-                     MapnikStyleSet *styleSet = (MapnikStyleSet *)vecTiles.styleDelegate;
+                     MapnikStyleSet *styleSet = (MapnikStyleSet *)vecTiles.tileParser.styleDelegate;
                      styleSet.tileStyleSettings.markerImportance = 10.0;
                      styleSet.tileStyleSettings.fontName = @"Gill Sans";
                      
@@ -1578,7 +1591,7 @@ static const int NumMegaMarkers = 15000;
     {
         if (!modelsObj)
         {
-            [self addModels:locations len:NumLocations stride:4 offset:3 desc:@{}];
+            [self addModels:locations len:NumLocations stride:4 offset:2 desc:@{}];
         }
     } else {
         if (modelsObj)
@@ -1865,6 +1878,11 @@ static const int NumMegaMarkers = 15000;
         loc = ex.center;
         title = @"Shape";
         subTitle = @"Extruded";
+    } else if ([selectedObj isKindOfClass:[MaplyGeomModelInstance class]]) {
+        MaplyGeomModelInstance *modelInst = (MaplyGeomModelInstance *)selectedObj;
+        loc = MaplyCoordinateMake(modelInst.center.x,modelInst.center.y);
+        title = @"Model";
+        subTitle = @"Instance";
     } else
     {
         // Don't know what it is
@@ -1977,7 +1995,7 @@ static const int NumMegaMarkers = 15000;
 
 - (void)maplyViewController:(MaplyViewController *)viewC didStopMoving:(MaplyCoordinate *)corners userMotion:(bool)userMotion
 {
-    NSLog(@"Maply Stopped moving");
+//    NSLog(@"Maply Stopped moving");
 }
 
 #pragma mark - Popover Delegate

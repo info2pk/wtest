@@ -53,7 +53,8 @@
                 @{kMaplyFilled: @(YES),
                  kMaplyDrawPriority: @(drawPriority+kMaplyVectorDrawPriorityDefault),
                   kMaplyVecCentered: @(true),
-                  kMaplySelectable: @(self.selectable)
+                  kMaplySelectable: @(self.selectable),
+                  kMaplyEnable: @(NO)
                  }];
         
         if (styleEntry[@"fill"])
@@ -77,8 +78,7 @@
     return self;
 }
 
-- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID layer:(MaplyQuadPagingLayer *)layer viewC:(MaplyBaseViewController *)viewC;
-{
+- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID viewC:(MaplyBaseViewController *)viewC{
     MaplyComponentObject *baseObj = nil;
     NSMutableArray *compObjs = [NSMutableArray array];
     for (NSDictionary *desc in subStyles)

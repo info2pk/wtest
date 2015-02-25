@@ -26,8 +26,23 @@
 @interface MaplyMatrix : NSObject
 
 /** @brief Construct with yaw, pitch, and roll parameters.
-    @brief Construct the matrix with the standard yaw, pitch, and roll used by aircraft.
+    @details Construct the matrix with the standard yaw, pitch, and roll used by aircraft.
   */
 - (id)initWithYaw:(double)yaw pitch:(double)pitch roll:(double)roll;
+
+/** @brief Construct with a consistent scale in each dimension.
+    @details Construct with the same scale in x,y, and z.
+  */
+- (id)initWithScale:(double)scale;
+
+/** @brief Construct a rotation around the given axis.
+    @details Build a matrix that rotates the given amount (in radians) around the given axis.
+  */
+- (id)initWithAngle:(double)ang axisX:(double)x axisY:(double)y axisZ:(double)z;
+
+/** @brief Multiply the given matrix with this one and return a new one.
+    @details Multiply the given matrix like so:  ret = this * other.  Return the new one.
+  */
+- (id)multiplyWith:(MaplyMatrix *)other;
 
 @end

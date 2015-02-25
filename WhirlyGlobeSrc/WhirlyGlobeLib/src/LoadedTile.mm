@@ -1158,7 +1158,7 @@ bool TileBuilder::isValidTile(const Mbr &theMbr)
 }
 
 // Update based on what children are doing
-void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[],int currentImage0,int currentImage1,ChangeSet &changeRequests)
+void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[],int currentImage0,int currentImage1,ChangeSet &changeRequests,std::vector<Quadtree::Identifier> &nodesEnabled,std::vector<Quadtree::Identifier> &nodesDisabled)
 {
     bool childrenExist = false;
     
@@ -1207,6 +1207,8 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
                     }
                     childDrawIds[whichChild] = EmptyIdentity;
                     childSkirtDrawIds[whichChild] = EmptyIdentity;
+                    
+                    nodesDisabled.push_back(childTile->nodeInfo.ident);
                 }
                 
                 childrenExist = true;
@@ -1303,6 +1305,8 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
                 if (skirtDraw)
                     changeRequests.push_back(new AddDrawableReq(skirtDraw));
             }
+
+            nodesEnabled.push_back(nodeInfo.ident);
         }
         
         // Also turn off any children that may have been on
@@ -1340,6 +1344,8 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
             }
             drawId = EmptyIdentity;
             skirtDrawId = EmptyIdentity;
+            
+            nodesDisabled.push_back(nodeInfo.ident);
         }
     }
     

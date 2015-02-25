@@ -23,6 +23,10 @@
 
 @interface MaplyGeomModel()
 
-@property (nonatomic) std::vector<WhirlyKit::GeometryRaw> &rawGeom;
+// Return the list of texture file names
+- (void)getTextureFileNames:(std::vector<std::string> &)texFileNames;
+
+// Convert to
+- (void)asRawGeometry:(std::vector<WhirlyKit::GeometryRaw> &)rawGeom withTexMapping:(const std::vector<WhirlyKit::SimpleIdentity> &)texFileMap;
 
 @end

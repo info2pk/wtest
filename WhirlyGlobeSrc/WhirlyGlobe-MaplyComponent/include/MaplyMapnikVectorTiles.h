@@ -22,6 +22,7 @@
 #import <Foundation/Foundation.h>
 #import "MaplyQuadPagingLayer.h"
 #import "MaplyTileSource.h"
+#import "MaplyCoordinate.h"
 
 /** @brief Geometry type for data found within PBF files.
     @details These are the geometry types supported within Mapnik PBF files.
@@ -48,18 +49,60 @@ typedef enum {
     the vectors read by a MaplyMapnikVectorTiles object.  In general, this will be
     a parsed Mapnik vector file, but you can substitute your own logic as well.
   */
-@protocol VectorStyleDelegate <NSObject>
+@protocol MaplyVectorStyleDelegate <NSObject>
 
+/** @brief Return the styles that apply to the given feature (attributes).
+  */
 - (NSArray*)stylesForFeatureWithAttributes:(NSDictionary*)attributes
                       onTile:(MaplyTileID)tileID
-                     inLayer:(NSString*)layer
+                    inLayer:(NSString*)layer
                        viewC:(MaplyBaseViewController *)viewC;
-- (BOOL)layerShouldDisplay:(NSString*)layer;
 
+/// @brief Return true if the given layer is meant to display for the given tile (zoom level)
+- (BOOL)layerShouldDisplay:(NSString*)layer tile:(MaplyTileID)tileID;
+
+/// @brief Return the style associated with the given UUID.
 - (MaplyVectorTileStyle*)styleForUUID:(NSString*)uiid viewC:(MaplyBaseViewController *)viewC;
 
 @end
 
+/** @brief Container for data parsed out of a vector tile.
+  */
+@interface MaplyVectorTileData : NSObject
+
+/// @brief Component objects already added to the display, but not yet visible.
+@property (nonatomic,strong) NSArray *compObjs;
+
+/// @brief If there were any raster layers, they're here by name
+@property (nonatomic,strong) NSDictionary *rasterLayers;
+
+@end
+
+/** @brief Handles the actual data parsing for an individual vector tile after it comes in.
+    @details It you're letting the toolkit do the paging, use a MaplyMapnikVectorTiles which will create one of these.  You only use this directly if you're fetching the data on your own.
+  */
+@interface MaplyMapnikVectorTileParser : NSObject
+
+/// @brief Initialize with the style delegate
+- (id)initWithStyle:(NSObject<MaplyVectorStyleDelegate> *)styleDelegate viewC:(MaplyBaseViewController *)viewC;
+
+/// @brief The styling delegate turns vector data into visible objects in the toolkit
+@property (nonatomic, strong) NSObject<MaplyVectorStyleDelegate> *styleDelegate;
+
+/// @brief Maply view controller we're adding this data to
+@property (nonatomic, weak) MaplyBaseViewController *viewC;
+
+@property (nonatomic, assign) BOOL debugLabel;
+@property (nonatomic, assign) BOOL debugOutline;
+
+/// @brief Construct the visible objects for the given tile
+/// @param bbox is in the local coordinate system (likely Spherical Mercator)
+- (MaplyVectorTileData *)buildObjects:(NSData *)data tile:(MaplyTileID)tileID bounds:(MaplyBoundingBox)bbox;
+
+@end
+
+/// @brief The various types of style that will work with Mapnik vector tiles
+typedef enum {MapnikXMLStyle,MapnikMapboxGLStyle} MapnikStyleType;
 
 /** @brief Provides on demand creation for Mapnik style vector tiles.
     @details Create one of these to read Mapnik PBF style tiles from a remote
@@ -68,27 +111,37 @@ typedef enum {
   */
 @interface MaplyMapnikVectorTiles : NSObject <MaplyPagingDelegate>
 
+/// @brief One or more tile sources to fetch data from per tile
 @property (nonatomic, readonly) NSArray *tileSources;
-@property (nonatomic, strong) NSObject<VectorStyleDelegate> *styleDelegate;
+
+/// @brief Access token to use with the remote service
 @property (nonatomic, strong) NSString *accessToken;
-@property (nonatomic, assign) BOOL debugLabel;
-@property (nonatomic, assign) BOOL debugOutline;
-@property (nonatomic, assign) int minZoom,maxZoom;
+
+/// @brief Handles the actual Mapnik vector tile parsing
+@property (nonatomic, strong) MaplyMapnikVectorTileParser *tileParser;
+
+/// @brief Minimum zoom level available
+@property (nonatomic, assign) int minZoom;
+
+/// @brief Maximum zoom level available
+@property (nonatomic, assign) int maxZoom;
 
 /** @brief A convenience method that fetches all the relevant files and creates a vector tiles object.
     @details This method will fetch all the relevant config files necessary to start a Mapnik vector tile object and the call you back to set up the actual layer.
     @param tileSpec Either a local filename or a URL to the remote JSON tile spec.
+    @param accessToken The access key provided by your service.
     @param styleFile Either a local file name or a URL for the Mapnik XML style file.
     @param cacheDir Where to cache the vector tiles, or nil for no caching.
     @param viewC View controller the data will be associated with.
     @param successBlock This block is called with the vector tiles object on success.  You'll need to create the paging layer and attach the vector tiles to it.
     @param failureBlock This block is called if any of the loading fails.
   */
-+ (void) StartRemoteVectorTilesWithTileSpec:(NSString *)tileSpec style:(NSString *)styleFile cacheDir:(NSString *)cacheDir viewC:(MaplyBaseViewController *)viewC success:(void (^)(MaplyMapnikVectorTiles *vecTiles))successBlock failure:(void (^)(NSError *error))failureBlock;
++ (void) StartRemoteVectorTilesWithTileSpec:(NSString *)tileSpec accessToken:(NSString *)accessToken style:(NSString *)styleFile styleType:(MapnikStyleType)styleType cacheDir:(NSString *)cacheDir viewC:(MaplyBaseViewController *)viewC success:(void (^)(MaplyMapnikVectorTiles *vecTiles))successBlock failure:(void (^)(NSError *error))failureBlock;
 
 /** @brief A convenience method that fetches all the relevant files and creates a vector tiles object.
     @details This method will fetch all the relevant config files necessary to start a Mapnik vector tile object and the call you back to set up the actual layer.
     @param tileURL The URL to fetch vector tiles from.
+    @param accessToken The access key provided by your service.
     @param ext The tile extension to use.
     @param minZoom The minimum zoom level to use.
     @param maxZoom The maximum zoom level to use
@@ -98,22 +151,22 @@ typedef enum {
     @param successBlock This block is called with the vector tiles object on success.  You'll need to create the paging layer and attach the vector tiles to it.
     @param failureBlock This block is called if any of the loading fails.
  */
-+ (void) StartRemoteVectorTilesWithURL:(NSString *)tileURL ext:(NSString *)ext minZoom:(int)minZoom maxZoom:(int)maxZoom style:(NSString *)styleFile cacheDir:(NSString *)cacheDir viewC:(MaplyBaseViewController *)viewC success:(void (^)(MaplyMapnikVectorTiles *vecTiles))successBlock failure:(void (^)(NSError *error))failureBlock;
++ (void) StartRemoteVectorTilesWithURL:(NSString *)tileURL ext:(NSString *)ext minZoom:(int)minZoom maxZoom:(int)maxZoom accessToken:(NSString *)accessToken style:(NSString *)styleFile styleType:(MapnikStyleType)styleType cacheDir:(NSString *)cacheDir viewC:(MaplyBaseViewController *)viewC success:(void (^)(MaplyMapnikVectorTiles *vecTiles))successBlock failure:(void (^)(NSError *error))failureBlock;
 
 /** @brief Init with a single remote tile source.
   */
-- (instancetype) initWithTileSource:(NSObject<MaplyTileSource>*)tileSource;
+- (instancetype) initWithTileSource:(NSObject<MaplyTileSource>*)tileSource style:(NSObject<MaplyVectorStyleDelegate> *)style viewC:(MaplyBaseViewController *)viewC;
 
 /** @brief Init with a list of tile sources.
     @details These are MaplyRemoteTileInfo objects and will be combined by the
     MaplyMapnikVectorTiles object for display.
 */
-- (instancetype) initWithTileSources:(NSArray*)tileSources;
+- (instancetype) initWithTileSources:(NSArray*)tileSources style:(NSObject<MaplyVectorStyleDelegate> *)style viewC:(MaplyBaseViewController *)viewC;
 
 /** @brief Init with the filename of an MBTiles archive containing PBF tiles.
     @details This will read individual tiles from an MBTiles archive containging PBF.
     @details The file should be local.
   */
-- (instancetype) initWithMBTiles:(MaplyMBTileSource *)tileSource;
+- (instancetype) initWithMBTiles:(MaplyMBTileSource *)tileSource style:(NSObject<MaplyVectorStyleDelegate> *)style viewC:(MaplyBaseViewController *)viewC;
 
 @end
