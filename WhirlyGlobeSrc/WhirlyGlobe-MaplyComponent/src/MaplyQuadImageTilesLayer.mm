@@ -93,7 +93,7 @@ using namespace WhirlyKit;
     bool variableSizeTiles;
     bool canDoValidTiles;
     bool canFetchFrames;
-    bool wantsUnload,wantsEnabled,wantsDisabled;
+    bool wantsWillLoad,wantsUnload,wantsEnabled,wantsDisabled;
     std::vector<int> framePriorities;
 }
 
@@ -143,8 +143,9 @@ using namespace WhirlyKit;
     
     // Can the source fetch individual frames of animation
     canFetchFrames = [_tileSource respondsToSelector:@selector(startFetchLayer:tile:frame:)] || [_tileSource respondsToSelector:@selector(imageForTile:frame:)];
-    
-    // Wants unload callbacks
+
+    // Various callsbacks
+    wantsWillLoad = [_tileSource respondsToSelector:@selector(tileWillLoad:)];
     wantsUnload = [_tileSource respondsToSelector:@selector(tileUnloaded:)];
     wantsEnabled = [_tileSource respondsToSelector:@selector(tileWasEnabled:)];
     wantsDisabled = [_tileSource respondsToSelector:@selector(tileWasDisabled:)];
@@ -783,6 +784,21 @@ using namespace WhirlyKit;
 {
     MaplyTileID tileID;
     tileID.x = col;  tileID.y = row;  tileID.level = level;
+    
+    // Let the delegate know we're about to start loading
+    if (wantsWillLoad)
+    {
+        MaplyTileID theTileID;
+        theTileID.x = col;  theTileID.y = row;  theTileID.level = level;
+        // If we're not doing OSM style addressing, we need to flip the Y back to TMS
+        if (!_flipY)
+        {
+            int y = (1<<level)-tileID.y-1;
+            theTileID.y = y;
+        }
+        
+        [_tileSource tileWillLoad:theTileID];
+    }
 
     // If this is lower level than we're representing, just fake it
     if (tileID.level < minZoom)

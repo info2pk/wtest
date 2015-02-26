@@ -338,6 +338,12 @@ static bool trackConnections = false;
     return [_tileInfo validTile:tileID bbox:bbox];
 }
 
+- (void)tileWillLoad:(MaplyTileID)tileID
+{
+    if ([_delegate respondsToSelector:@selector(remoteTileSource:tileWillLoad:)])
+        [_delegate remoteTileSource:self tileWillLoad:tileID];
+}
+
 - (void)tileUnloaded:(MaplyTileID)tileID
 {
     if ([_delegate respondsToSelector:@selector(remoteTileSource:tileUnloaded:)])
@@ -404,6 +410,8 @@ static bool trackConnections = false;
                 {
                     tileData = [_delegate remoteTileSource:self modifyTileReturn:tileData forTile:tileID];
                 }
+                
+                return tileData;
             }
         }
         
@@ -467,9 +475,6 @@ static bool trackConnections = false;
     
     if (imgData)
     {
-        if ([_delegate respondsToSelector:@selector(remoteTileSource:tileDidLoad:)])
-            [_delegate remoteTileSource:self tileDidLoad:tileID];
-
         // Let the paging layer know about it
         [layer loadedImages:imgData forTile:tileID];
         
@@ -506,10 +511,6 @@ static bool trackConnections = false;
                 if (weakSelf)
                 {
                     NSData *imgData = responseObject;
-                    
-                    // Let the delegate know we loaded successfully
-                    if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(remoteTileSource:tileDidLoad:)])
-                        [weakSelf.delegate remoteTileSource:weakSelf tileDidLoad:tileID];
                     
                     // Let's also write it back out for the cache
                     if (weakSelf.tileInfo.cacheDir)

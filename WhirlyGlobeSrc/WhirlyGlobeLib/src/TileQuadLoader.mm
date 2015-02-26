@@ -494,7 +494,7 @@ using namespace WhirlyKit;
     [self dataSource:inDataSource loadedImage:loadImage forLevel:level col:col row:row frame:-1];
 }
 
-- (void)dataSource:(NSObject<WhirlyKitQuadTileImageDataSource> *)dataSource loadedImage:(id)loadTile forLevel:(int)level col:(int)col row:(int)row frame:(int)frame
+- (void)dataSource:(NSObject<WhirlyKitQuadTileImageDataSource> *)inDataSource loadedImage:(id)loadTile forLevel:(int)level col:(int)col row:(int)row frame:(int)frame
 {
     bool isPlaceholder = [self tileIsPlaceholder:loadTile];
     
@@ -636,8 +636,12 @@ using namespace WhirlyKit;
     }
 
     if (loadingSuccess)
+    {
+        // Let the delegate know we're actually going to use this one
+        if ([inDataSource respondsToSelector:@selector(tileWasEnabledLevel:col:row:)])
+            [inDataSource tileWasEnabledLevel:tileIdent.level col:tileIdent.x row:tileIdent.y];
         [_quadLayer loader:self tileDidLoad:tile->nodeInfo.ident frame:frame];
-    else {
+    } else {
         // Shouldn't have a visual representation, so just lose it
         [_quadLayer loader:self tileDidNotLoad:tile->nodeInfo.ident frame:frame];
         tileSet.erase(it);

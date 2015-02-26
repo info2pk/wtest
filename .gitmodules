@@ -46,3 +46,6 @@
 [submodule "third-party/protobuf"]
 	path = third-party/protobuf
 	url = https://github.com/mousebird/protobuf.git
+[submodule "third-party/libwebp"]
+	path = third-party/libwebp
+	url = https://github.com/mousebird/libwebp

@@ -178,39 +178,45 @@
 
 @optional
 
-/** @brief The tile successfully loaded.
+/** @brief The tile will start fetching and then load.
+    @details Called on the layer thread when the loading process starts.
     @param tileSource the remote tile source that loaded the tile.
     @param tileID The ID of the tile we loaded.
-  */
-- (void) remoteTileSource:(id)tileSource tileDidLoad:(MaplyTileID)tileID;
-
-/** @brief Modify the tile data after it's been read.
-    @details This method is useful for messing with tile sources that may not be images, but can be turned into images.
-  */
-- (NSData *) remoteTileSource:(id)tileSource modifyTileReturn:(NSData *)tileData forTile:(MaplyTileID)tileID;
+ */
+- (void) remoteTileSource:(id)tileSource tileWillLoad:(MaplyTileID)tileID;
 
 /** @brief The tile failed to load.
+    @details Called on the layer thread after a failed load.
     @param tileSource The remote tile source that tried to load the tile.
     @param tileID The tile ID of the tile that failed to load.
     @param error The NSError message, probably from the network routine.
-  */
+ */
 - (void) remoteTileSource:(id)tileSource tileDidNotLoad:(MaplyTileID)tileID error:(NSError *)error;
 
 /** @brief Called when the tile is disabled.
+    @details Called on the layer thread.
  */
-- (void)remoteTileSource:(id)tileSource tileDisabled:(MaplyTileID)tileID;
+- (void) remoteTileSource:(id)tileSource tileDisabled:(MaplyTileID)tileID;
 
 /** @brief Called when the tile is enabled.
+    @details Called on the layer thread.
  */
-- (void)remoteTileSource:(id)tileSource tileEnabled:(MaplyTileID)tileID;
+- (void) remoteTileSource:(id)tileSource tileEnabled:(MaplyTileID)tileID;
 
 /** @brief Called when the tile is unloaded.
     @details Normally you won't get called when an image or vector tile is unloaded from memory.  If you set this, you will.
     @details You're not required to do anything, but you can clean up data of your own if you like.
-    @details You will be called on another thread, so act accordingly.
+    @details This is called on the layer thread.
     @param tileID The tile that that just got unloaded.
  */
-- (void)remoteTileSource:(id)tileSource tileUnloaded:(MaplyTileID)tileID;
+- (void) remoteTileSource:(id)tileSource tileUnloaded:(MaplyTileID)tileID;
+
+
+/** @brief Modify the tile data after it's been read.
+    @details This method is useful for messing with tile sources that may not be images, but can be turned into images.
+    @details This is called on an arbitrary thread.
+ */
+- (id) remoteTileSource:(id)tileSource modifyTileReturn:(NSData *)tileData forTile:(MaplyTileID)tileID;
 
 @end
 

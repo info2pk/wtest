@@ -365,7 +365,7 @@ static bool trackConnections = false;
             // Let the delegate know we loaded successfully
             // Note: Not passing in frame
             if (_delegate && [_delegate respondsToSelector:@selector(remoteTileSource:tileDidLoad:)])
-                [_delegate remoteTileSource:self tileDidLoad:tileID];
+                [_delegate remoteTileSource:self tileWillLoad:tileID];
         
             if (singleFetch)
                 [layer loadedImages:allData forTile:tileID frame:which];

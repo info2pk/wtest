@@ -40,6 +40,7 @@
 #import "AFHTTPRequestOperation.h"
 #import "MapnikStyleSet.h"
 #import "MapboxVectorStyleSet.h"
+#import "decode.h"
 
 using namespace Eigen;
 using namespace WhirlyKit;
@@ -90,12 +91,12 @@ static double MAX_EXTENT = 20037508.342789244;
     Point2f firstCoord;
     
     NSMutableArray *components = [NSMutableArray array];
+    NSMutableDictionary *images = [NSMutableDictionary dictionary];
     //    CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
     
     unsigned featureCount = 0;
     
     NSMutableDictionary *featureStyles = [NSMutableDictionary new];
-    
     
     //now attempt to open protobuf
     vector_tile::Tile tile;
@@ -123,9 +124,18 @@ static double MAX_EXTENT = 20037508.342789244;
                     const std::string &raster = f.raster();
                     const char *str = raster.c_str();
                     int len = raster.length();
-                    const unsigned int *chunkLen = (const unsigned int *)&str[4];
-                    const char *chunkIdent = &str[8];
-                    NSLog(@"Has raster");
+                    
+                    int imageWidth,imageHeight;
+//                    WebPGetInfo((const uint8_t*)str, len, &imageWidth, &imageHeight);
+                    
+                    uint8_t *rawImgData = WebPDecodeRGBA((const uint8_t*)str, len, &imageWidth, &imageHeight);
+                    if (rawImgData)
+                    {
+                        NSData *imgData = [[NSData alloc] initWithBytesNoCopy:rawImgData length:imageWidth*imageHeight*4 freeWhenDone:YES];
+                        UIImage *image = [UIImage imageWithRawData:imgData width:imageWidth height:imageHeight];
+                        if (image)
+                            images[layerName] = image;
+                    }
                     
                     continue;
                 }
@@ -390,6 +400,8 @@ static double MAX_EXTENT = 20037508.342789244;
     
     MaplyVectorTileData *tileRet = [[MaplyVectorTileData alloc] init];
     tileRet.compObjs = components;
+    if ([images count])
+        tileRet.rasterLayers = images;
     
     return tileRet;
 }

@@ -172,6 +172,8 @@
 		2BCA68AC174197C500696BA8 /* MaplyCoordinateSystem_private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BCA68AB174197C500696BA8 /* MaplyCoordinateSystem_private.h */; };
 		2BD115921615E15400A4BF5D /* MaplyShape.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BD115911615E15400A4BF5D /* MaplyShape.h */; };
 		2BD115961615E16900A4BF5D /* MaplyShape.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2BD115951615E16900A4BF5D /* MaplyShape.mm */; };
+		2BD65F351A9EA6D300B65E93 /* vp8i.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BD65F241A9EA6D300B65E93 /* vp8i.h */; };
+		2BD65F361A9EA6D300B65E93 /* vp8li.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BD65F251A9EA6D300B65E93 /* vp8li.h */; };
 		2BDC8A16191D994F00DFECF0 /* AFHTTPRequestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BDC8A03191D994F00DFECF0 /* AFHTTPRequestOperation.h */; };
 		2BDC8A17191D994F00DFECF0 /* AFHTTPRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 2BDC8A04191D994F00DFECF0 /* AFHTTPRequestOperation.m */; };
 		2BDC8A18191D994F00DFECF0 /* AFHTTPRequestOperationManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BDC8A05191D994F00DFECF0 /* AFHTTPRequestOperationManager.h */; };
@@ -212,6 +214,7 @@
 		2BEBABAB1811F65700A9419C /* MaplyTileSource.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2BEBABA91811F65700A9419C /* MaplyTileSource.mm */; };
 		2BECC1BD15E548EF00FBD805 /* PinchDelegateFixed.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BECC1BC15E548EF00FBD805 /* PinchDelegateFixed.h */; };
 		2BECC1BF15E5490000FBD805 /* PinchDelegateFixed.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2BECC1BE15E5490000FBD805 /* PinchDelegateFixed.mm */; };
+		2BEE968D1A9EAADA007F9209 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2BEE968C1A9EAADA007F9209 /* WebP.framework */; };
 		880E70A818F76ED200D32A54 /* NSDictionary+StyleRules.m in Sources */ = {isa = PBXBuildFile; fileRef = 880E70A618F76ED200D32A54 /* NSDictionary+StyleRules.m */; };
 		881F668418F20A8F00D17110 /* descriptor.cc in Sources */ = {isa = PBXBuildFile; fileRef = 881F663018F20A8F00D17110 /* descriptor.cc */; };
 		881F668518F20A8F00D17110 /* descriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = 881F663118F20A8F00D17110 /* descriptor.h */; };
@@ -482,6 +485,8 @@
 		2BCA68AB174197C500696BA8 /* MaplyCoordinateSystem_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MaplyCoordinateSystem_private.h; path = include/private/MaplyCoordinateSystem_private.h; sourceTree = SOURCE_ROOT; };
 		2BD115911615E15400A4BF5D /* MaplyShape.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MaplyShape.h; path = include/MaplyShape.h; sourceTree = SOURCE_ROOT; };
 		2BD115951615E16900A4BF5D /* MaplyShape.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = MaplyShape.mm; path = src/MaplyShape.mm; sourceTree = SOURCE_ROOT; };
+		2BD65F241A9EA6D300B65E93 /* vp8i.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vp8i.h; path = ../../../libwebp/src/dec/vp8i.h; sourceTree = "<group>"; };
+		2BD65F251A9EA6D300B65E93 /* vp8li.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vp8li.h; path = ../../../libwebp/src/dec/vp8li.h; sourceTree = "<group>"; };
 		2BDC8A03191D994F00DFECF0 /* AFHTTPRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AFHTTPRequestOperation.h; path = "../../third-party/AFNetworking/AFNetworking/AFHTTPRequestOperation.h"; sourceTree = "<group>"; };
 		2BDC8A04191D994F00DFECF0 /* AFHTTPRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AFHTTPRequestOperation.m; path = "../../third-party/AFNetworking/AFNetworking/AFHTTPRequestOperation.m"; sourceTree = "<group>"; };
 		2BDC8A05191D994F00DFECF0 /* AFHTTPRequestOperationManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AFHTTPRequestOperationManager.h; path = "../../third-party/AFNetworking/AFNetworking/AFHTTPRequestOperationManager.h"; sourceTree = "<group>"; };
@@ -522,6 +527,7 @@
 		2BEBABA91811F65700A9419C /* MaplyTileSource.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = MaplyTileSource.mm; path = src/MaplyTileSource.mm; sourceTree = "<group>"; };
 		2BECC1BC15E548EF00FBD805 /* PinchDelegateFixed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PinchDelegateFixed.h; path = include/private/PinchDelegateFixed.h; sourceTree = SOURCE_ROOT; };
 		2BECC1BE15E5490000FBD805 /* PinchDelegateFixed.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PinchDelegateFixed.mm; path = src/PinchDelegateFixed.mm; sourceTree = SOURCE_ROOT; };
+		2BEE968C1A9EAADA007F9209 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebP.framework; path = "../../third-party/libwebp/WebP.framework"; sourceTree = "<group>"; };
 		880E70A618F76ED200D32A54 /* NSDictionary+StyleRules.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSDictionary+StyleRules.m"; path = "src/NSDictionary+StyleRules.m"; sourceTree = "<group>"; };
 		881F663018F20A8F00D17110 /* descriptor.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = descriptor.cc; sourceTree = "<group>"; };
 		881F663118F20A8F00D17110 /* descriptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = descriptor.h; sourceTree = "<group>"; };
@@ -621,6 +627,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2BEE968D1A9EAADA007F9209 /* WebP.framework in Frameworks */,
 				2B0D62ED17A2ECCA00C3298D /* libxml2.dylib in Frameworks */,
 				2B604125179901B0008BA2F6 /* libstdc++.dylib in Frameworks */,
 				2B61D78A1603F5CE007888CF /* libWhirlyGlobeLib.a in Frameworks */,
@@ -721,6 +728,7 @@
 		2B11E0DD15B4C030007AAE3F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2BEE968C1A9EAADA007F9209 /* WebP.framework */,
 				2B604124179901B0008BA2F6 /* libstdc++.dylib */,
 				2B11E0EB15B4C0BA007AAE3F /* WhirlyGlobeLib.xcodeproj */,
 				2B11E0DE15B4C030007AAE3F /* Foundation.framework */,
@@ -1224,6 +1232,7 @@
 				2B96D36618AAE81F00999E24 /* MaplyVectorStyle.h in Headers */,
 				2BE8491415BC8DEB006CFD3F /* MaplyComponentObject_private.h in Headers */,
 				881F669318F20A8F00D17110 /* generated_message_util.h in Headers */,
+				2BD65F351A9EA6D300B65E93 /* vp8i.h in Headers */,
 				2B5F19131A92FBCB004A8723 /* MapboxVectorStyleSet.h in Headers */,
 				881F669F18F20A8F00D17110 /* zero_copy_stream.h in Headers */,
 				881F66AA18F20A8F00D17110 /* reflection_ops.h in Headers */,
@@ -1335,6 +1344,7 @@
 				881F66BF18F20A8F00D17110 /* once.h in Headers */,
 				2B789F79185B91F90028E027 /* MaplyAnnotation.h in Headers */,
 				2B5F191E1A93B17C004A8723 /* MapboxVectorStyleFill.h in Headers */,
+				2BD65F361A9EA6D300B65E93 /* vp8li.h in Headers */,
 				881F66B018F20A8F00D17110 /* atomicops_internals_arm_gcc.h in Headers */,
 				2BCA68AC174197C500696BA8 /* MaplyCoordinateSystem_private.h in Headers */,
 				2B44E817174B20A800474C2B /* MaplyQuadPagingLayer.h in Headers */,
@@ -1622,6 +1632,11 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				DSTROOT = /tmp/WhirlyGlobeComponent.dst;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/sjg/iPhone/National,
+					"Geographic/worldatlasv4/libs/WhirlyGlobe-Maply/third-party/libwebp",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WhirlyGlobe-MaplyComponent/WhirlyGlobe-MaplyComponent-Prefix.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
@@ -1637,6 +1652,7 @@
 					/usr/include/libxml2/,
 					"../../third-party/protobuf/src/",
 					"../../third-party/protobuf/",
+					"../../third-party/libwebp/WebP.framework/headers/",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_CFLAGS = "";
@@ -1654,6 +1670,11 @@
 				CLANG_DEBUG_INFORMATION_LEVEL = "line-tables-only";
 				CLANG_ENABLE_MODULES = YES;
 				DSTROOT = /tmp/WhirlyGlobeComponent.dst;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/sjg/iPhone/National,
+					"Geographic/worldatlasv4/libs/WhirlyGlobe-Maply/third-party/libwebp",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WhirlyGlobe-MaplyComponent/WhirlyGlobe-MaplyComponent-Prefix.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
@@ -1669,6 +1690,7 @@
 					/usr/include/libxml2/,
 					"../../third-party/protobuf/src/",
 					"../../third-party/protobuf/",
+					"../../third-party/libwebp/WebP.framework/headers/",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_CFLAGS = "";

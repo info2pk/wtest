@@ -145,11 +145,17 @@ NSString *MaplyTileIDString(MaplyTileID tileID);
   */
 - (void)startFetchLayer:(id)layer tile:(MaplyTileID)tileID frame:(int)frame;
 
+/** @brief Called when the tile will start loading.
+    @details This is called on the layer thread right before the load starts.
+    @param tileID The tile that will start loading shortly.
+  */
+- (void)tileWillLoad:(MaplyTileID)tileID;
+
 /** @brief Called when the tile is disabled by the renderer.
     @details Normally you won't get called when an image or vector tile is disabled from display.  If you set this, you will.
     @details You're not required to do anything, but you can disable your own data if you like.
     @details You will be called on another thread, so act accordingly.
-    @param tileID The tile tha that just got disabled.
+    @param tileID The tile that that just got disabled.
  */
 - (void)tileWasDisabled:(MaplyTileID)tileID;
 
