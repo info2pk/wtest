@@ -46,7 +46,6 @@ public:
     class Region
     {
     public:
-        NSTimeInterval touched;
         int sx,sy,ex,ey;
     };
     
