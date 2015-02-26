@@ -121,7 +121,7 @@ using namespace WhirlyGlobe;
     // First, we'll look for labels and markers
     SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
     std::vector<SelectionManager::SelectedObject> selectedObjs;
-    selectManager->pickObjects(Point2f(msg.touchLoc.x,msg.touchLoc.y),10.0,globeView,selectedObjs);
+    selectManager->pickObjects(Point2f(msg.touchLoc.x,msg.touchLoc.y),23.0,globeView,selectedObjs);
 
     NSMutableArray *retSelectArr = [NSMutableArray array];
     if (!selectedObjs.empty())
