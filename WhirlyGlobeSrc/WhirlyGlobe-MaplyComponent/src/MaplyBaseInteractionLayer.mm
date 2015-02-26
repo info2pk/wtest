@@ -453,9 +453,19 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
                 theChanges.changes.insert(theChanges.changes.end(), changes.begin(), changes.end());
                 perThreadChanges.erase(it);
                 perThreadChanges.insert(theChanges);
-            } else
-                // We're not, so execute the changes
-                scene->addChangeRequests(changes);
+            } else {
+                NSThread *currentThread = [NSThread currentThread];
+                if ([currentThread isKindOfClass:[WhirlyKitLayerThread class]])
+                {
+                    // We're on a layer thread, so use its change queue
+                    WhirlyKitLayerThread *currentLayerThread = (WhirlyKitLayerThread *)currentThread;
+                    [currentLayerThread addChangeRequests:changes];
+                }
+                else {
+                    // We're not, so execute the changes
+                    scene->addChangeRequests(changes);
+                }
+            }
 
             pthread_mutex_unlock(&changeLock);
         }
