@@ -274,8 +274,8 @@ bool DynamicTexture::findRegion(int sizeX,int sizeY,Region &region)
     // Look for a spot big enough
     bool found = false;
     int foundX,foundY;
-    for (int iy=0;iy<=numCell-sizeY && !found;iy++)
-        for (int ix=0;ix<=numCell-sizeX && !found;ix++)
+    for (int iy=0;iy<=(numCell-sizeY) && !found;iy++)
+        for (int ix=0;ix<=(numCell-sizeX) && !found;ix++)
         {
             bool clear = true;
             for (int testY=0;testY<sizeY && clear;testY++)
