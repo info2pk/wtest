@@ -222,15 +222,28 @@ void DynamicTexture::setRegion(const Region &region, bool enable)
             layoutGrid[iy*numCell+ix] = enable;
         }
 }
+
+// We delay removing the texture regions to let things settle
+// Note: This is a hack
+static const NSTimeInterval RegionRemoveDelay = 2.0;
     
 bool DynamicTexture::findRegion(int sizeX,int sizeY,Region &region)
 {
+    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
+    
     // First thing we need to do is clear any outstanding regions
     // Don't sit on the lock, as the main thread uses it
     std::vector<Region> toClear;
+    std::vector<Region> toLeave;
     pthread_mutex_lock(&regionLock);
-    toClear = releasedRegions;
-    releasedRegions.clear();
+    for (const Region &region : releasedRegions)
+    {
+        if (now - region.touched > RegionRemoveDelay)
+            toClear.push_back(region);
+        else
+            toLeave.push_back(region);
+    }
+    releasedRegions = toLeave;
     pthread_mutex_unlock(&regionLock);
     
     // Mark the region cells as cleared and clear out the actual bytes in the texture
@@ -291,8 +304,10 @@ bool DynamicTexture::findRegion(int sizeX,int sizeY,Region &region)
     
 void DynamicTexture::addRegionToClear(const Region &region)
 {
+    Region theRegion = region;
+    theRegion.touched = CFAbsoluteTimeGetCurrent();
     pthread_mutex_lock(&regionLock);
-    releasedRegions.push_back(region);
+    releasedRegions.push_back(theRegion);
     pthread_mutex_unlock(&regionLock);
 }
     
@@ -359,7 +374,8 @@ bool DynamicTextureAtlas::addTexture(const std::vector<Texture *> &newTextures,i
     Texture *firstTex = newTextures[0];
     if (firstTex->getWidth() > texSize || firstTex->getHeight() > texSize)
         return false;
-    
+
+    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
     TextureRegion texRegion;    
     
     // Now look for space
@@ -374,6 +390,7 @@ bool DynamicTextureAtlas::addTexture(const std::vector<Texture *> &newTextures,i
         DynamicTexture::Region thisRegion;
         if (firstDynTex->findRegion(numCellX, numCellY, thisRegion))
         {
+            thisRegion.touched = now;
             texRegion.region = thisRegion;
             texRegion.dynTexId = firstDynTex->getId();
             regions.insert(texRegion);
@@ -398,6 +415,7 @@ bool DynamicTextureAtlas::addTexture(const std::vector<Texture *> &newTextures,i
         DynamicTexture::Region thisRegion;
         if (dynTexVec->at(0)->findRegion(numCellX, numCellY, thisRegion))
         {
+            thisRegion.touched = now;
             texRegion.region = thisRegion;
             texRegion.dynTexId = dynTexVec->at(0)->getId();
             regions.insert(texRegion);
