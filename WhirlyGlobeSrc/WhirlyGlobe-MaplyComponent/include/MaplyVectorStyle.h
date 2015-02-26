@@ -74,6 +74,8 @@
 @property (nonatomic) MaplyBoundingBox geoBBox;
 /// @brief The lowest draw priority to use for this particular tile
 @property (nonatomic) int baseDrawPriority;
+/// @brief If set to false we won't parse the vectors, just the rasters
+@property (nonatomic) bool parseVectors;
 
 @end
 

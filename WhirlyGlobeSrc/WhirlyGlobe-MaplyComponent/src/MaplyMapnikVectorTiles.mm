@@ -140,6 +140,9 @@ static double MAX_EXTENT = 20037508.342789244;
                     continue;
                 }
                 
+                if (!tileInfo.parseVectors)
+                    continue;
+                
                 //Parse attributes
                 NSMutableDictionary *attributes = [NSMutableDictionary new];
                 attributes[@"geometry_type"] = @(g_type); //this seems wastefull, but is needed for the rule matcher

@@ -28,6 +28,15 @@
 using namespace WhirlyKit;
 
 @implementation MaplyVectorTileInfo
+
+- (id)init
+{
+    self = [super init];
+    _parseVectors = true;
+    
+    return self;
+}
+
 @end
 
 @implementation MaplyVectorTileStyleSettings
