@@ -502,13 +502,19 @@ typedef std::map<std::string,NSMutableArray *> VecsForStyles;
             }
         }
     }
+
+    MaplyVectorTileInfo *tileInfo = [[MaplyVectorTileInfo alloc] init];
+    tileInfo.tileID = tileID;
+    MaplyBoundingBox bbox;
+    [layer geoBoundsforTile:tileID ll:&bbox.ll ur:&bbox.ur];
+    tileInfo.geoBBox = bbox;
     
     // Work through the styles we found, adding everything together
     for (VecsForStyles::iterator it = vecsForStyles.begin();it != vecsForStyles.end(); ++it)
     {
         // Get the style object and then add the data
         MaplyVectorTileStyle *style = [self getStyle:it->first];
-        NSArray *compObjs = [style buildObjects:it->second forTile:tileID viewC:layer.viewC];
+        NSArray *compObjs = [style buildObjects:it->second forTile:tileInfo viewC:layer.viewC];
         if (compObjs)
         {
             [layer addData:compObjs forTile:tileID style:(style.geomAdditive ? MaplyDataStyleAdd : MaplyDataStyleReplace)];

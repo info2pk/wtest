@@ -397,7 +397,7 @@ void TileBuilder::buildSkirt(BasicDrawable *draw,const Point3f &center,std::vect
 
     
 bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,BasicDrawable **skirtDraw,std::vector<Texture *> *texs,
-                            Point2f texScale,Point2f texOffset,std::vector<WhirlyKitLoadedImage *> *loadImages,WhirlyKitElevationChunk *elevData)
+                            Point2f texScale,Point2f texOffset,std::vector<WhirlyKitLoadedImage *> *loadImages,WhirlyKitElevationChunk *elevData,Quadtree::Identifier *parentIdent)
 {
     Mbr theMbr = nodeInfo->mbr;
     
@@ -514,6 +514,11 @@ bool TileBuilder::buildTile(Quadtree::NodeInfo *nodeInfo,BasicDrawable **draw,Ba
         int thisDrawPriority = drawPriority;
         if (singleLevel)
             thisDrawPriority += nodeInfo->ident.level;
+        // Note: Debugging
+        if (parentIdent)
+            thisDrawPriority = drawPriority + 1000*parentIdent->level;
+        else
+            thisDrawPriority = drawPriority + 1000*nodeInfo->ident.level;
         chunk->setDrawPriority(thisDrawPriority);
         chunk->setVisibleRange(minVis, maxVis);
         chunk->setAlpha(hasAlpha);
@@ -1026,7 +1031,7 @@ bool LoadedTile::addToScene(TileBuilder *tileBuilder,std::vector<WhirlyKitLoaded
     std::vector<Texture *> texs(loadImages.size(),NULL);
     if (tileBuilder->texAtlas)
         subTexs.resize(loadImages.size());
-    if (!tileBuilder->buildTile(&nodeInfo, &draw, &skirtDraw, (!loadImages.empty() ? &texs : NULL), Point2f(1.0,1.0), Point2f(0.0,0.0), &loadImages, loadElev))
+    if (!tileBuilder->buildTile(&nodeInfo, &draw, &skirtDraw, (!loadImages.empty() ? &texs : NULL), Point2f(1.0,1.0), Point2f(0.0,0.0), &loadImages, loadElev, NULL))
         return false;
     drawId = draw->getId();
     skirtDrawId = (skirtDraw ? skirtDraw->getId() : EmptyIdentity);
@@ -1177,8 +1182,15 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
         }
     }
     
+    bool wasRepresentingChild = false;
+    for (unsigned int ii=0;ii<4;ii++)
+        if (childDrawIds[ii] != EmptyIdentity)
+            wasRepresentingChild = true;
+    bool nowRepresentingChild = false;
+    
     // Work through the possible children
     int whichChild = 0;
+    int numPresentChild = 0;
     for (unsigned int iy=0;iy<2;iy++)
         for (unsigned int ix=0;ix<2;ix++)
         {
@@ -1210,7 +1222,10 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
                 }
                 
                 childrenExist = true;
+                numPresentChild++;
             } else {
+                nowRepresentingChild = true;
+
                 // It's not there, so make sure we're faking it with our texture
                 // May need to build the geometry
                 if (childDrawIds[whichChild] == EmptyIdentity)
@@ -1220,7 +1235,7 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
                     {
                         BasicDrawable *childDraw = NULL;
                         BasicDrawable *childSkirtDraw = NULL;
-                        tileBuilder->buildTile(&childInfo,&childDraw,&childSkirtDraw,NULL,Point2f(0.5,0.5),Point2f(0.5*ix,0.5*iy),nil,elevData);
+                        tileBuilder->buildTile(&childInfo,&childDraw,&childSkirtDraw,NULL,Point2f(0.5,0.5),Point2f(0.5*ix,0.5*iy),nil,elevData,&nodeInfo.ident);
                         // Set this to change the color of child drawables.  Helpfull for debugging
                         //                        childDraw->setColor(RGBAColor(64,64,64,255));
                         childDrawIds[whichChild] = childDraw->getId();
@@ -1270,7 +1285,7 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
         {
             BasicDrawable *draw = NULL;
             BasicDrawable *skirtDraw = NULL;
-            tileBuilder->buildTile(&nodeInfo, &draw, &skirtDraw, NULL, Point2f(1.0,1.0), Point2f(0.0,0.0), nil, elevData);
+            tileBuilder->buildTile(&nodeInfo, &draw, &skirtDraw, NULL, Point2f(1.0,1.0), Point2f(0.0,0.0), nil, elevData, &nodeInfo.ident);
             drawId = draw->getId();
             if (!texIds.empty())
                 draw->setTexId(0,texIds[0]);
@@ -1342,10 +1357,14 @@ void LoadedTile::updateContents(TileBuilder *tileBuilder,LoadedTile *childTiles[
             }
             drawId = EmptyIdentity;
             skirtDrawId = EmptyIdentity;
-            
-            nodesDisabled.push_back(nodeInfo.ident);
         }
     }
+    
+    // We were representing a child and now we're not, so turn this off
+    if (wasRepresentingChild && !nowRepresentingChild)
+        nodesDisabled.push_back(nodeInfo.ident);
+    else if (!wasRepresentingChild && nowRepresentingChild)
+        nodesEnabled.push_back(nodeInfo.ident);
     
     //    tree->Print();
 }

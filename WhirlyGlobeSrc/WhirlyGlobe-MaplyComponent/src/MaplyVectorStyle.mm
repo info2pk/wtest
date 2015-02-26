@@ -27,6 +27,9 @@
 
 using namespace WhirlyKit;
 
+@implementation MaplyVectorTileInfo
+@end
+
 @implementation MaplyVectorTileStyleSettings
 
 - (id)init
@@ -124,7 +127,7 @@ using namespace WhirlyKit;
     }
 }
 
-- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID viewC:(MaplyBaseViewController *)viewC
+- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyVectorTileInfo *)tileInfo viewC:(MaplyBaseViewController *)viewC
 {
     return nil;
 }

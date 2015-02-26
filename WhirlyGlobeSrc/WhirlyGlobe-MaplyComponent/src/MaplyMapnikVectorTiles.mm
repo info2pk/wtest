@@ -64,15 +64,15 @@ static double MAX_EXTENT = 20037508.342789244;
     return self;
 }
 
-- (MaplyVectorTileData *)buildObjects:(NSData *)tileData tile:(MaplyTileID)tileID bounds:(MaplyBoundingBox)bbox
+- (MaplyVectorTileData *)buildObjects:(NSData *)tileData tile:(MaplyVectorTileInfo *)tileInfo;
 {
     //calulate tile bounds and coordinate shift
     int tileSize = 256;
-    double sx = tileSize / (bbox.ur.x - bbox.ll.x);
-    double sy = tileSize / (bbox.ur.y - bbox.ll.y);
+    double sx = tileSize / (tileInfo.bbox.ur.x - tileInfo.bbox.ll.x);
+    double sy = tileSize / (tileInfo.bbox.ur.y - tileInfo.bbox.ll.y);
     //Tile origin is upper left corner, in epsg:3785
-    double tileOriginX = bbox.ll.x;
-    double tileOriginY = bbox.ur.y;
+    double tileOriginX = tileInfo.bbox.ll.x;
+    double tileOriginY = tileInfo.bbox.ur.y;
     
     double scale;
     double x;
@@ -106,7 +106,7 @@ static double MAX_EXTENT = 20037508.342789244;
             vector_tile::Tile_Layer const& tileLayer = tile.layers(i);
             scale = tileLayer.extent() / 256.0;
             NSString *layerName = [NSString stringWithUTF8String:tileLayer.name().c_str()];
-            if(![_styleDelegate layerShouldDisplay:layerName tile:tileID]) {
+            if(![_styleDelegate layerShouldDisplay:layerName tile:tileInfo.tileID]) {
                 // if we dont have any styles for a layer, dont bother parsing the features
                 continue;
             }
@@ -126,6 +126,8 @@ static double MAX_EXTENT = 20037508.342789244;
                     const unsigned int *chunkLen = (const unsigned int *)&str[4];
                     const char *chunkIdent = &str[8];
                     NSLog(@"Has raster");
+                    
+                    continue;
                 }
                 
                 //Parse attributes
@@ -162,7 +164,7 @@ static double MAX_EXTENT = 20037508.342789244;
                 }
                 
                 NSArray *styles = [self.styleDelegate stylesForFeatureWithAttributes:attributes
-                                                                              onTile:tileID
+                                                                              onTile:tileInfo.tileID
                                                                              inLayer:layerName
                                                                                viewC:_viewC];
                 
@@ -346,16 +348,16 @@ static double MAX_EXTENT = 20037508.342789244;
     for(id key in symbolizerKeys) {
         MaplyVectorTileStyle *symbolizer = [self.styleDelegate styleForUUID:key viewC:_viewC];
         NSArray *features = featureStyles[key];
-        [components addObjectsFromArray:[symbolizer buildObjects:features forTile:tileID viewC:_viewC]];
+        [components addObjectsFromArray:[symbolizer buildObjects:features forTile:tileInfo viewC:_viewC]];
     }
     
     if(self.debugLabel || self.debugOutline) {
-        MaplyCoordinate ne = bbox.ur;
-        MaplyCoordinate sw = bbox.ll;
+        MaplyCoordinate ne = tileInfo.bbox.ur;
+        MaplyCoordinate sw = tileInfo.bbox.ll;
         if(self.debugLabel) {
             MaplyScreenLabel *label = [[MaplyScreenLabel alloc] init];
-            label.text = [NSString stringWithFormat:@"%d/%d/%d %lu items", tileID.level, tileID.x,
-                          tileID.y, (unsigned long)components.count];
+            label.text = [NSString stringWithFormat:@"%d/%d/%d %lu items", tileInfo.tileID.level, tileInfo.tileID.x,
+                          tileInfo.tileID.y, (unsigned long)components.count];
             MaplyCoordinate tileCenter;
             tileCenter.x = (ne.x + sw.x)/2.0;
             tileCenter.y = (ne.y + sw.y)/2.0;
@@ -598,6 +600,12 @@ static double MAX_EXTENT = 20037508.342789244;
         [layer geoBoundsforTile:tileID ll:&bbox.ll ur:&bbox.ur];
         bbox.ll = [self toMerc:bbox.ll];
         bbox.ur = [self toMerc:bbox.ur];
+        MaplyVectorTileInfo *tileInfo = [[MaplyVectorTileInfo alloc] init];
+        tileInfo.bbox = bbox;
+        tileInfo.tileID = tileID;
+        MaplyBoundingBox geoBbox;
+        [layer geoBoundsforTile:tileID ll:&geoBbox.ll ur:&geoBbox.ur];
+        tileInfo.geoBBox = geoBbox;
         
         NSMutableArray *compObjs = [NSMutableArray array];
         
@@ -626,7 +634,7 @@ static double MAX_EXTENT = 20037508.342789244;
                     }
                 }
                 
-                MaplyVectorTileData *retData = [_tileParser buildObjects:tileData tile:tileID bounds:bbox];
+                MaplyVectorTileData *retData = [_tileParser buildObjects:tileData tile:tileInfo];
                 if (!retData)
                 {
                     NSLog(@"Failed to parse tile: %d: (%d,%d)",tileID.level,tileID.x,flippedYTile.y);

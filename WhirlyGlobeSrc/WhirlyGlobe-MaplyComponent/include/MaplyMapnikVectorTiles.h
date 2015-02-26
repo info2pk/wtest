@@ -24,6 +24,8 @@
 #import "MaplyTileSource.h"
 #import "MaplyCoordinate.h"
 
+@class MaplyVectorTileInfo;
+
 /** @brief Geometry type for data found within PBF files.
     @details These are the geometry types supported within Mapnik PBF files.
   */
@@ -96,8 +98,7 @@ typedef enum {
 @property (nonatomic, assign) BOOL debugOutline;
 
 /// @brief Construct the visible objects for the given tile
-/// @param bbox is in the local coordinate system (likely Spherical Mercator)
-- (MaplyVectorTileData *)buildObjects:(NSData *)data tile:(MaplyTileID)tileID bounds:(MaplyBoundingBox)bbox;
+- (MaplyVectorTileData *)buildObjects:(NSData *)tileData tile:(MaplyVectorTileInfo *)tileInfo;
 
 @end
 

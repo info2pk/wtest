@@ -154,7 +154,7 @@
     return self;
 }
 
-- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID viewC:(MaplyBaseViewController *)viewC
+- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyVectorTileInfo *)tileInfo viewC:(MaplyBaseViewController *)viewC
 {
     MaplyComponentObject *baseWideObj = nil;
     MaplyComponentObject *baseRegObj = nil;

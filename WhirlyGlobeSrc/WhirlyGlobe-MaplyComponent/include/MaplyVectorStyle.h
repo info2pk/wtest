@@ -62,6 +62,21 @@
 
 @end
 
+/** @brief Details of a given tile.
+  */
+@interface MaplyVectorTileInfo : NSObject
+
+/// @brief Tile ID for the tile we're building
+@property (nonatomic) MaplyTileID tileID;
+/// @brief Bounding box in local coordinates scaled to meters
+@property (nonatomic) MaplyBoundingBox bbox;
+/// @brief Bounding box in geographic (radians)
+@property (nonatomic) MaplyBoundingBox geoBBox;
+/// @brief The lowest draw priority to use for this particular tile
+@property (nonatomic) int baseDrawPriority;
+
+@end
+
 /** The Maply Vector Tile Style is an internal representation of the style JSON coming out
     of a Maply Vector Tile database.
   */
@@ -84,7 +99,7 @@
 - (void)resolveVisibility:(NSDictionary *)styleEntry settings:(MaplyVectorTileStyleSettings *)settings desc:(NSMutableDictionary *)desc;
 
 /// @brief Construct objects related to this style based on the input data.
-- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyTileID)tileID viewC:(MaplyBaseViewController *)viewC;
+- (NSArray *)buildObjects:(NSArray *)vecObjs forTile:(MaplyVectorTileInfo *)tileInfo viewC:(MaplyBaseViewController *)viewC;
 
 /// @brief parse a mapnik style template string
 - (NSString*)formatText:(NSString*)formatString forObject:(MaplyVectorObject*)vec;

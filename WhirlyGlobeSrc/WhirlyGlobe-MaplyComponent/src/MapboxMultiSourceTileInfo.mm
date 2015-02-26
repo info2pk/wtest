@@ -285,7 +285,13 @@ public:
     bbox.ur.x *= 20037508.342789244/M_PI;
     bbox.ur.y *= 20037508.342789244/(M_PI);
     
-    MaplyVectorTileData *vecTileData = [source->tileParser buildObjects:tileData tile:tileID bounds:bbox];
+    MaplyVectorTileInfo *tileInfo = [[MaplyVectorTileInfo alloc] init];
+    tileInfo.tileID = tileID;
+    tileInfo.bbox = bbox;
+    MaplyBoundingBox geoBbox;
+    [_imageLayer geoBoundsForTile:tileID bbox:&geoBbox];
+    tileInfo.geoBBox = geoBbox;
+    MaplyVectorTileData *vecTileData = [source->tileParser buildObjects:tileData tile:tileInfo];
     @synchronized(self)
     {
         vecTiles[MaplyTileIDString(tileID)] = vecTileData;
