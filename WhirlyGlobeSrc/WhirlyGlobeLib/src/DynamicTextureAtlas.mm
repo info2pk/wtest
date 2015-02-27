@@ -363,8 +363,8 @@ bool DynamicTextureAtlas::addTexture(const std::vector<Texture *> &newTextures,i
     if (firstTex->getWidth() > texSize || firstTex->getHeight() > texSize)
         return false;
 
-    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
-    TextureRegion texRegion;    
+//    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
+    TextureRegion texRegion;
     
     // Now look for space
     DynamicTextureVec *dynTexVec = NULL;
