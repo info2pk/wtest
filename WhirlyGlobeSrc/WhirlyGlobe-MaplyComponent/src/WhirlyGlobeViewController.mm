@@ -1250,8 +1250,11 @@ using namespace WhirlyGlobe;
         }
     }
     
-    if (includeVectors) {
-        // TODO - find vectors
+    if (includeVectors)
+    {
+        MaplyCoordinate geoCoord;
+        if ([self geoPointFromScreen:screenPt geoCoord:&geoCoord])
+            [interactLayer findVectorsInPoint:Point2f(geoCoord.x,geoCoord.y) inView:self multi:true];
     }
     
     return [NSArray arrayWithArray:retSelectArr];
