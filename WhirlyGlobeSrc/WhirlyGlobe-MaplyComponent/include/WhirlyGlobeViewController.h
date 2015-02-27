@@ -350,6 +350,14 @@
   */
 - (id)findObjectAtLocation:(CGPoint)screenPt;
 
+/** @brief Find selectable objects within a radius the given location.
+ @details This runs immediately and looks for Maply objects at the given location.  It differs from the WhirlyGlobeViewControllerDelegate in that it doesn't require user interaction.
+ @param radius The radius around screenPt where we'll accept objects.
+ @param screenPt The location on screen where we're looking for objects.
+ @return Returns a Maply object such as MaplyScreenLabel or MaplyShape or nil if it failed to find anything.
+ */
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt;
+
 /** @brief An old style method to add a spherical earth layer.
     @details Image sets and this layer have been superceeded by MaplyQuadImageTilesLayer.  This is here for backwards compatibility.
   */

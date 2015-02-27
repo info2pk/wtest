@@ -1226,6 +1226,35 @@ using namespace WhirlyGlobe;
     return nil;
 }
 
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt
+{
+    // Use to map IDs in the selection layer to objects the user passed in
+    SelectObjectSet selectObjectSet;
+    
+    // First, we'll look for labels and markers
+    SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
+    std::vector<SelectionManager::SelectedObject> selectedObjs;
+    selectManager->pickObjects(Point2f(screenPt.x,screenPt.y),radius,globeView,selectedObjs);
+    
+    NSMutableArray *retSelectArr = [NSMutableArray array];
+    if (!selectedObjs.empty())
+    {
+        // Work through the objects the manager found, creating entries for each
+        for (unsigned int ii=0;ii<selectedObjs.size();ii++)
+        {
+            
+            SelectionManager::SelectedObject &theSelObj = selectedObjs[ii];
+            
+            id object = [interactLayer getSelectableObject:theSelObj.selectID];
+            if (object) [retSelectArr addObject:object];
+        }
+    }
+    
+    // TODO - find vectors
+    
+    return [NSArray arrayWithArray:retSelectArr];
+}
+
 #pragma mark - WhirlyGlobeAnimationDelegate
 
 // Called every frame from within the globe view
