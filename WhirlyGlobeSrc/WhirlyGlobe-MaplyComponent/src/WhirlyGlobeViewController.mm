@@ -1226,7 +1226,7 @@ using namespace WhirlyGlobe;
     return nil;
 }
 
-- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt includeVectors:(BOOL)includeVectors
 {
     // Use to map IDs in the selection layer to objects the user passed in
     SelectObjectSet selectObjectSet;
@@ -1250,7 +1250,9 @@ using namespace WhirlyGlobe;
         }
     }
     
-    // TODO - find vectors
+    if (includeVectors) {
+        // TODO - find vectors
+    }
     
     return [NSArray arrayWithArray:retSelectArr];
 }
