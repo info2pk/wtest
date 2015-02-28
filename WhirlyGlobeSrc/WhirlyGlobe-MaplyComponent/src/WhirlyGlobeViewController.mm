@@ -1254,7 +1254,11 @@ using namespace WhirlyGlobe;
     {
         MaplyCoordinate geoCoord;
         if ([self geoPointFromScreen:screenPt geoCoord:&geoCoord])
-            [interactLayer findVectorsInPoint:Point2f(geoCoord.x,geoCoord.y) inView:self multi:true];
+        {
+            NSArray *vecArr = [interactLayer findVectorsInPoint:Point2f(geoCoord.x,geoCoord.y) inView:self multi:true];
+            if (vecArr)
+                [retSelectArr addObjectsFromArray:vecArr];
+        }
     }
     
     return [NSArray arrayWithArray:retSelectArr];
