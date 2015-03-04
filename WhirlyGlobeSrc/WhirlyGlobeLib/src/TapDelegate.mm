@@ -62,6 +62,16 @@ using namespace WhirlyKit;
 {
 	UITapGestureRecognizer *tap = sender;
     
+    // Check to see if any subviews are using exclusiveTouch - if so, bail
+    // There may be a more elegant solution for this
+    for (UIView *view in tap.view.subviews) {
+        UIView *currentView = [view hitTest:[tap locationInView:view] withEvent:nil];
+        while (currentView && currentView != tap.view) {
+            if (currentView.exclusiveTouch) return;
+            currentView = currentView.superview;
+        }
+    }
+    
 	WhirlyKitEAGLView  *glView = (WhirlyKitEAGLView  *)tap.view;
 	WhirlyKitSceneRendererES *sceneRender = glView.renderer;
 //    WhirlyKit::Scene *scene = sceneRender.scene;
