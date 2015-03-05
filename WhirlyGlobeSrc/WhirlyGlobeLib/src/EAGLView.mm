@@ -148,6 +148,10 @@
     if (state == UIApplicationStateBackground)
         return;
     
+    // See if the renderer actually needs to be resized
+    if (_renderer.framebufferWidth == self.layer.frame.size.width && _renderer.framebufferHeight == self.layer.frame.size.height)
+        return;
+    
     // Try to resize the renderer, multiple times if necessary
 	if (![_renderer resizeFromLayer:(CAEAGLLayer*)self.layer])
     {
