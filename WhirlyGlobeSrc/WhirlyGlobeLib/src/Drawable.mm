@@ -1557,6 +1557,11 @@ void BasicDrawable::drawOGL2(WhirlyKitRendererFrameInfo *frameInfo,Scene *scene)
     // Fade is always mixed in
     prog->setUniform("u_fade", fade);
     
+    // Rally ---------
+    prog->setUniform("u_saturation", frameInfo.theView.saturation);
+    prog->setUniform("u_brightness", frameInfo.theView.brightness);
+    prog->setUniform("u_contrast", frameInfo.theView.contrast);
+    
     // Let the shaders know if we even have a texture
     prog->setUniform("u_hasTexture", anyTextures);
     

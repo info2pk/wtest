@@ -87,6 +87,43 @@ static const char *vertexShaderTri =
 "}                                           \n"
 ;
 
+// Rally ---------
+static const char *fragmentShaderTri = R"(
+    precision mediump float;
+    uniform sampler2D s_baseMap0;
+    uniform bool u_hasTexture;
+    uniform lowp float u_saturation;
+    uniform lowp float u_brightness;
+    uniform lowp float u_contrast;
+    varying vec2 v_texCoord;
+    varying vec4 v_color;
+
+    // Values from "Graphics Shaders: Theory and Practice" by Bailey and Cunningham
+    const mediump vec3 luminanceWeighting = vec3(0.2125, 0.7154, 0.0721);
+
+    void main(){
+        if (u_hasTexture) {
+            vec4 baseColor = texture2D(s_baseMap0, v_texCoord);
+            vec4 finalColor = v_color * baseColor;
+            
+            lowp float luminance = dot(finalColor.rgb, luminanceWeighting);
+            lowp vec3 grayScaleColor = vec3(luminance);
+            
+            vec4 saturation = vec4(mix(grayScaleColor, finalColor.rgb, u_saturation), finalColor.a);
+            vec4 brightness = vec4((saturation.rgb + vec3(u_brightness)), finalColor.a);
+            vec4 contrast = vec4(((brightness.rgb - vec3(0.5)) * u_contrast + vec3(0.5)), finalColor.a);
+            
+            gl_FragColor = contrast;
+        }
+        else {
+            vec4 baseColor = vec4(1.0, 1.0, 1.0, 1.0);
+            vec4 finalColor = v_color * baseColor;
+            gl_FragColor = finalColor;
+        }
+    }
+)";
+
+/*
 static const char *fragmentShaderTri =
 "precision mediump float;                            \n"
 "\n"
@@ -105,6 +142,7 @@ static const char *fragmentShaderTri =
 "  gl_FragColor = v_color * baseColor;  \n"
 "}                                                   \n"
 ;
+*/
 
 static const char *vertexShaderTriMultiTex =
 "struct directional_light {\n"

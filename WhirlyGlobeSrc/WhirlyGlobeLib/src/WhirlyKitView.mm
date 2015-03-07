@@ -42,6 +42,11 @@ using namespace Eigen;
 		_farPlane = 4.0;
         _lastChangedTime = CFAbsoluteTimeGetCurrent();
         _continuousZoom = false;
+        
+        // Rally ---------
+        _saturation = 1.0f;
+        _brightness = .0f;
+        _contrast = 1.0f;
     }
     
     return self;

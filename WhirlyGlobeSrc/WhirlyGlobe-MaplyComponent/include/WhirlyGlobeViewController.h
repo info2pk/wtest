@@ -246,6 +246,21 @@
   */
 @property(nonatomic,assign) float heading;
 
+/** @brief Globe color saturation
+ @details Changes the color saturation of the globe
+ */
+@property(nonatomic,assign) float saturation;
+
+/** @brief Globe color saturation
+ @details Changes the color saturation of the globe
+ */
+@property(nonatomic,assign) float brightness;
+
+/** @brief Globe color saturation
+ @details Changes the color saturation of the globe
+ */
+@property(nonatomic,assign) float contrast;
+
 /** @brief Return the zoom limits for the globe.
     @param minHeight The closest a viewer is allowed to get to the globe surface.
     @param maxHeight The farthest away a viewer is allowed to get from the globe surface.

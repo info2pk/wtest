@@ -31,6 +31,7 @@ using namespace WhirlyGlobe;
 - (id)init
 {
     self = [super init];
+
     _heading = MAXFLOAT;
     _height = 1.0;
     _tilt = MAXFLOAT;
@@ -790,6 +791,36 @@ using namespace WhirlyGlobe;
     Point3d localPt = [globeView currentUp];
     GeoCoord geoCoord = globeView.coordAdapter->getCoordSystem()->localToGeographic(globeView.coordAdapter->displayToLocal(localPt));
     pos->x = geoCoord.lon();  pos->y = geoCoord.lat();
+}
+
+- (void)setSaturation:(float)saturation
+{
+    globeView.saturation = saturation;
+}
+
+- (float)saturation
+{
+    return globeView.saturation;
+}
+
+- (void)setBrightness:(float)brightness
+{
+    globeView.brightness = brightness;
+}
+
+- (float)brightness
+{
+    return globeView.brightness;
+}
+
+- (void)setContrast:(float)contrast
+{
+    globeView.contrast = contrast;
+}
+
+- (float)contrast
+{
+    return globeView.contrast;
 }
 
 // Called back on the main thread after the interaction thread does the selection
