@@ -149,7 +149,9 @@
         return;
     
     // See if the renderer actually needs to be resized
-    if (_renderer.framebufferWidth == self.layer.frame.size.width && _renderer.framebufferHeight == self.layer.frame.size.height)
+    // Scale needs to be accounted for
+    float scale = [self contentScaleFactor];
+    if (_renderer.framebufferWidth == (self.layer.frame.size.width * scale) && _renderer.framebufferHeight == (self.layer.frame.size.height * scale))
         return;
     
     // Try to resize the renderer, multiple times if necessary
