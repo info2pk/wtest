@@ -795,6 +795,8 @@ using namespace WhirlyGlobe;
 
 - (void)setSaturation:(float)saturation
 {
+    if (saturation != globeView.saturation) sceneRenderer.triggerDraw = YES;
+    
     globeView.saturation = saturation;
 }
 
@@ -805,6 +807,8 @@ using namespace WhirlyGlobe;
 
 - (void)setBrightness:(float)brightness
 {
+    if (brightness != globeView.brightness) sceneRenderer.triggerDraw = YES;
+    
     globeView.brightness = brightness;
 }
 
@@ -815,6 +819,8 @@ using namespace WhirlyGlobe;
 
 - (void)setContrast:(float)contrast
 {
+    if (contrast != globeView.contrast) sceneRenderer.triggerDraw = YES;
+    
     globeView.contrast = contrast;
 }
 
@@ -1415,8 +1421,6 @@ using namespace WhirlyGlobe;
     }
     
     return true;
-    
 }
-
 
 @end
