@@ -135,6 +135,12 @@ static double MAX_EXTENT = 20037508.342789244;
                         UIImage *image = [UIImage imageWithRawData:imgData width:imageWidth height:imageHeight];
                         if (image)
                             images[layerName] = image;
+                    } else {
+                        // If it's JPEG or PNG let UIImage do the heavy lifting
+                        NSData *imgData = [[NSData alloc] initWithBytesNoCopy:(void *)str length:len freeWhenDone:NO];
+                        UIImage *image = [UIImage imageWithData:imgData];
+                        if (image)
+                            images[layerName] = image;
                     }
                     
                     continue;
