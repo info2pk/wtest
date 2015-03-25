@@ -46,6 +46,9 @@
 /// @brief Distance from where the user tapped to the closest part of the object on the screen
 @property double screenDist;
 
+/// @brief Distance from where the user tapped to the center of the object on the screen
+@property double screenDistToCenter;
+
 /// @brief Distance from the user's viewpoint to the center of the object in 3-space.  Use this for sorting.
 @property double zDist;
 

@@ -653,7 +653,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                 // See if we fall within that polygon
                 if (PointInPolygon(touchPt, screenPts))
                 {
-                    SelectedObject selObj(screenObj.shapeID,0.0,0.0);
+                    // TODO: implement screenDistToCenter correctly
+                    SelectedObject selObj(screenObj.shapeID,0.0,0.0,0.0);
                     selObjs.push_back(selObj);
                     break;
                 }
@@ -671,7 +672,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
         // Got close enough to this object to select it
         if (closeDist2 < maxDist2)
         {
-            SelectedObject selObj(screenObj.shapeID,0.0,sqrtf(closeDist2));
+            // TODO: implement screenDistToCenter correctly
+            SelectedObject selObj(screenObj.shapeID,0.0,sqrtf(closeDist2),sqrtf(closeDist2));
             selObjs.push_back(selObj);
         }
         
@@ -734,7 +736,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     if (closeDist2 < maxDist2)
                     {
                         float dist3d = (Point3d(sel.midPt.x(),sel.midPt.y(),sel.midPt.z()) - eyePos).norm();
-                        SelectedObject selObj(sel.selectID,dist3d,sqrtf(closeDist2));
+                        // TODO: implement screenDistToCenter correctly
+                        SelectedObject selObj(sel.selectID,dist3d,sqrtf(closeDist2),sqrtf(closeDist2));
                         selObjs.push_back(selObj);
                     }
                 }
@@ -786,7 +789,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     }
                     if (closeDist2 < maxDist2)
                     {
-                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2));
+                        // TODO: implement screenDistToCenter correctly
+                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),sqrtf(closeDist2));
                         selObjs.push_back(selObj);
                     }
                 }
@@ -851,7 +855,7 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     
                     if (closeDist2 < maxDist2)
                     {
-                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2));
+                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),0.0);
                         selObjs.push_back(selObj);
                     }
                 }
@@ -911,7 +915,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
 
                 if (closeDist2 < maxDist2)
                 {
-                    SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2));
+                    // TODO: implement screenDistToCenter correctly
+                    SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),sqrtf(closeDist2));
                     selObjs.push_back(selObj);
                 }
             }

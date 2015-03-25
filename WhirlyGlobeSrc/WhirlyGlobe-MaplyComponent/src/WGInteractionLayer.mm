@@ -137,6 +137,7 @@ using namespace WhirlyGlobe;
                 selObj.selectedObj = it->obj;
 
             selObj.screenDist = theSelObj.screenDist;
+            selObj.screenDistToCenter = theSelObj.screenDistToCenter;
             selObj.zDist = theSelObj.distIn3D;
             
             if (selObj.selectedObj)

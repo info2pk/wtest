@@ -154,10 +154,11 @@ public:
     class SelectedObject
     {
     public:
-        SelectedObject(SimpleIdentity selectID,double distIn3D,double screenDist) : selectID(selectID), distIn3D(distIn3D), screenDist(screenDist) { }
+        SelectedObject(SimpleIdentity selectID,double distIn3D,double screenDist,double screenDistToCenter) : selectID(selectID), distIn3D(distIn3D), screenDist(screenDist), screenDistToCenter(screenDistToCenter) { }
         SimpleIdentity selectID;    // What we selected
         double distIn3D;            // 3D distance from eye
         double screenDist;          // 2D distance in screen space
+        double screenDistToCenter;  // 2D distance to center in screen space
     };
 
     /// Add a rectangle (in 3-space) for selection
