@@ -730,8 +730,8 @@ using namespace WhirlyGlobe;
             double ang = atan2(northPole.x(),northPole.y());
             // However, the pole might be down now
             // If so, rotate it back up
-            if (northPole.y() < 0.0)
-                ang += M_PI;
+//            if (northPole.y() < 0.0)
+//                ang += M_PI;
             Eigen::AngleAxisd upRot(ang,worldLoc);
             posRotNorth = posRot * upRot;
         }
