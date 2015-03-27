@@ -603,6 +603,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
     PlacementInfo pInfo(theView,renderer);
     if (!pInfo.globeView && !pInfo.mapView)
         return;
+    
+    Point2d touchPt2d(touchPt.x(),touchPt.y());
 
     // And the eye vector for billboards
     Vector4d eyeVec4 = pInfo.viewAndModelInvMat * Vector4d(0,0,1,0);
@@ -628,6 +630,7 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
         projectWorldPointToScreen(screenObj.dispLoc, pInfo, projPts,scale);
         
         float closeDist2 = MAXFLOAT;
+        double closeCenterDist2 = 0.0;
         // Work through the possible locations of the projected point
         for (unsigned int jj=0;jj<projPts.size();jj++)
         {
@@ -639,7 +642,9 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
             // Make sure it's on the screen at least
             if (!pInfo.frameMbr.overlaps(objMbr))
                 continue;
-            
+
+            double centerDist2 = (touchPt2d-projPt).squaredNorm();
+
             if (screenObj.shapeID != EmptyIdentity)
             {
                 std::vector<Point2f> screenPts;
@@ -653,8 +658,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                 // See if we fall within that polygon
                 if (PointInPolygon(touchPt, screenPts))
                 {
-                    // TODO: implement screenDistToCenter correctly
-                    SelectedObject selObj(screenObj.shapeID,0.0,0.0,0.0);
+                    SelectedObject selObj(screenObj.shapeID,0.0,0.0,sqrt(centerDist2));
+
                     selObjs.push_back(selObj);
                     break;
                 }
@@ -665,15 +670,18 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     float t;
                     Point2f closePt = ClosestPointOnLineSegment(screenPts[ii],screenPts[(ii+1)%4],touchPt,t);
                     float dist2 = (closePt-touchPt).squaredNorm();
-                    closeDist2 = std::min(dist2,closeDist2);
+                    if (dist2 < closeDist2)
+                    {
+                        closeDist2 = dist2;
+                        closeCenterDist2 = centerDist2;
+                    }
                 }
             }
         }
         // Got close enough to this object to select it
         if (closeDist2 < maxDist2)
         {
-            // TODO: implement screenDistToCenter correctly
-            SelectedObject selObj(screenObj.shapeID,0.0,sqrtf(closeDist2),sqrtf(closeDist2));
+            SelectedObject selObj(screenObj.shapeID,0.0,sqrtf(closeDist2),sqrt(closeCenterDist2));
             selObjs.push_back(selObj);
         }
         
@@ -736,8 +744,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     if (closeDist2 < maxDist2)
                     {
                         float dist3d = (Point3d(sel.midPt.x(),sel.midPt.y(),sel.midPt.z()) - eyePos).norm();
-                        // TODO: implement screenDistToCenter correctly
-                        SelectedObject selObj(sel.selectID,dist3d,sqrtf(closeDist2),sqrtf(closeDist2));
+                        // Note: Distance from touch to center is not correct
+                        SelectedObject selObj(sel.selectID,dist3d,sqrtf(closeDist2),0.0);
                         selObjs.push_back(selObj);
                     }
                 }
@@ -789,7 +797,6 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     }
                     if (closeDist2 < maxDist2)
                     {
-                        // TODO: implement screenDistToCenter correctly
                         SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),sqrtf(closeDist2));
                         selObjs.push_back(selObj);
                     }
@@ -812,6 +819,7 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                 {
                     std::vector<Point2f> screenPts;
                     
+                    Point2d centerOnScreen(0,0);
                     for (unsigned int ii=0;ii<4;ii++)
                     {
                         CGPoint screenPt;
@@ -821,7 +829,9 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                         else
                             screenPt = [pInfo.mapView pointOnScreenFromPlane:pt3d transform:&pInfo.viewAndModelMat frameSize:pInfo.frameSizeScale];
                         screenPts.push_back(Point2f(screenPt.x,screenPt.y));
+                        centerOnScreen += Point2d(screenPt.x,screenPt.y);
                     }
+                    centerOnScreen /= 4;
                     
                     float closeDist2 = MAXFLOAT;
                     float closeDist3d = MAXFLOAT;
@@ -855,7 +865,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
                     
                     if (closeDist2 < maxDist2)
                     {
-                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),0.0);
+                        double screenDistToCenter = (touchPt2d - centerOnScreen).norm();
+                        SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),screenDistToCenter);
                         selObjs.push_back(selObj);
                     }
                 }
@@ -915,8 +926,8 @@ void SelectionManager::pickObjects(Point2f touchPt,float maxDist,WhirlyKitView *
 
                 if (closeDist2 < maxDist2)
                 {
-                    // TODO: implement screenDistToCenter correctly
-                    SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),sqrtf(closeDist2));
+                    // Note: Distance between touch and center is not correct
+                    SelectedObject selObj(sel.selectID,closeDist3d,sqrtf(closeDist2),0.0);
                     selObjs.push_back(selObj);
                 }
             }
