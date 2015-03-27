@@ -60,6 +60,9 @@
 /// @details If the annotation would be off screen we would normally reposition the globe or map to make it visible.  If this is set to false, we won't.
 @property (nonatomic) bool repositionForVisibility;
 
+/// @brief If set we'll keep this annotation at the end of the list of subviews.
+@property (nonatomic) bool keepOnTop;
+
 /// @brief If set, we'll call this right as we reposition an annotation on the globe or map view
 @property (nonatomic,copy) void (^positionBlock)(MaplyAnnotation *annotation,CGRect frame);
 

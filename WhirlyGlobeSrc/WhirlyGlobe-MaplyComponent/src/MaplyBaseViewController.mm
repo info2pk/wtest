@@ -705,6 +705,21 @@ static const float PerfOutputDelay = 15.0;
     // But then we move it back because we're controlling its positioning
     CGRect frame = annotate.calloutView.frame;
     annotate.calloutView.frame = CGRectMake(frame.origin.x-pt.x+offset.x, frame.origin.y-pt.y+offset.y, frame.size.width, frame.size.height);
+    
+    // Make sure we're not stepping on a view that wants to be on top
+    NSMutableArray *topViews = [NSMutableArray array];
+    for (MaplyAnnotation *ann in annotations)
+    {
+        if (ann.keepOnTop)
+        {
+            [ann.calloutView removeFromSuperview];
+            [topViews addObject:ann.calloutView];
+        }
+    }
+    for (UIView *topView in topViews)
+    {
+        [glView addSubview:topView];
+    }
 
     ViewPlacementGenerator *vpGen = scene->getViewPlacementGenerator();
     if (alreadyHere)
@@ -722,6 +737,26 @@ static const float PerfOutputDelay = 15.0;
             vpGen->addView(GeoCoord(coord.x,coord.y),annotate.calloutView,annotate.minVis,annotate.maxVis,nil,nil);
     }
     sceneRenderer.triggerDraw = true;
+}
+
+- (void)moveAnnotationToTop:(MaplyAnnotation *)annotate
+{
+    annotate.keepOnTop = true;
+    
+    // Make sure we're not stepping on a view that wants to be on top
+    NSMutableArray *topViews = [NSMutableArray array];
+    for (MaplyAnnotation *ann in annotations)
+    {
+        if (ann.keepOnTop)
+        {
+            [ann.calloutView removeFromSuperview];
+            [topViews addObject:ann.calloutView];
+        }
+    }
+    for (UIView *topView in topViews)
+    {
+        [glView addSubview:topView];
+    }
 }
 
 // Delegate callback for annotation placement

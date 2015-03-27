@@ -480,6 +480,11 @@ typedef enum {MaplyThreadCurrent,MaplyThreadAny} MaplyThreadMode;
   */
 - (void)addAnnotation:(MaplyAnnotation *)annotate forPoint:(MaplyCoordinate)coord offset:(CGPoint)offset;
 
+/** @brief Move the given annotation to the top of the stack.
+    @details This will set the keepOnTop flag and reorder the annotations.  If there are multiple annotations with that set, it's random as to which will win.
+  */
+- (void)moveAnnotationToTop:(MaplyAnnotation *)annotate;
+
 /** @brief Remove the given annotation from the UIView.
     @details This will dismiss the given annotation with its animation.
   */
