@@ -214,6 +214,9 @@ using namespace WhirlyGlobe;
     return foundObjs;
 }
 
+// Distance we'll search around features
+static const float ScreenSearchDist = 27.0;
+
 // Do the logic for a selection
 // Runs in the layer thread
 - (void) userDidTapLayerThread:(WhirlyGlobeTapMessage *)msg
@@ -231,7 +234,7 @@ using namespace WhirlyGlobe;
     // First, we'll look for labels and markers
     SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
     std::vector<SelectionManager::SelectedObject> selectedObjs;
-    selectManager->pickObjects(Point2f(msg.touchLoc.x,msg.touchLoc.y),27.0,globeView,selectedObjs);
+    selectManager->pickObjects(Point2f(msg.touchLoc.x,msg.touchLoc.y),ScreenSearchDist,globeView,selectedObjs);
 
     NSMutableArray *retSelectArr = [NSMutableArray array];
     if (!selectedObjs.empty())
@@ -256,7 +259,7 @@ using namespace WhirlyGlobe;
     }
     
     // Next, try the vectors
-    NSArray *vecObjs = [self findVectorsNearScreenPt:Point2f(msg.touchLoc.x,msg.touchLoc.y)geoPt:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) screenDist:23.0 multi:true];
+    NSArray *vecObjs = [self findVectorsNearScreenPt:Point2f(msg.touchLoc.x,msg.touchLoc.y)geoPt:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) screenDist:ScreenSearchDist multi:true];
 //    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y())];
     for (MaplyVectorObject *vecObj in vecObjs)
     {
