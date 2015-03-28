@@ -19,6 +19,7 @@
  */
 
 #import "WGInteractionLayer_private.h"
+#import "MaplyBaseInteractionLayer_private.h"
 #import "MaplyScreenMarker.h"
 #import "MaplyMarker.h"
 #import "MaplyScreenLabel.h"
@@ -104,6 +105,115 @@ using namespace WhirlyGlobe;
     [self performSelector:@selector(processAutoSpin:) withObject:nil afterDelay:1.0];
 }
 
+- (bool) screenPtFromGeo:(Point2f)geoPt ret:(Point2f &)screenPt placeInfo:(SelectionManager::PlacementInfo &)pInfo
+{
+    Point3d pt = visualView.coordAdapter->localToDisplay(visualView.coordAdapter->getCoordSystem()->geographicToLocal3d(GeoCoord(geoPt.x(),geoPt.y())));
+    
+    if (CheckPointAndNormFacing(pt,pt.normalized(),pInfo.viewAndModelMat,pInfo.viewModelNormalMat) < 0.0)
+        return false;
+    
+    CGPoint cgScreenPt =  [globeView pointOnScreenFromSphere:pt transform:&pInfo.viewAndModelMat frameSize:Point2f(layerThread.renderer.framebufferWidth/self.glView.contentScaleFactor,layerThread.renderer.framebufferHeight/self.glView.contentScaleFactor)];
+    screenPt = Point2f(cgScreenPt.x,cgScreenPt.y);
+    
+    return true;
+}
+
+// Minimum distance from touch point to vector object in screen space
+- (double) dist2Squared:(MaplyVectorObject *)vecObj within:(double)screenDist touch:(const Point2f &)touchPt placeInfo:(SelectionManager::PlacementInfo &)pInfo
+{
+    double closeDist2 = MAXFLOAT;
+    
+    for (ShapeSet::iterator it = vecObj.shapes.begin();it != vecObj.shapes.end();++it)
+    {
+        VectorArealRef areal = boost::dynamic_pointer_cast<VectorAreal>(*it);
+        if (areal)
+        {
+            for (unsigned int ri=0;ri<areal->loops.size(); ri++)
+            {
+                VectorRing &ring = areal->loops[ri];
+                for (unsigned int ii=0;ii<ring.size();ii++)
+                {
+                    Point2f &p0 = ring[ii];
+                    Point2f &p1 = ring[(ii+1)%ring.size()];
+                    
+                    Point2f sp0,sp1;
+                    if ([self screenPtFromGeo:p0 ret:sp0 placeInfo:pInfo] && [self screenPtFromGeo:p1 ret:sp1 placeInfo:pInfo])
+                    {
+                        float t;
+                        Point2f closePt = ClosestPointOnLineSegment(sp0,sp1,touchPt,t);
+                        float dist2 = (closePt-touchPt).squaredNorm();
+                        if (dist2 < closeDist2)
+                            closeDist2 = dist2;
+                    }
+                }
+            }
+        } else {
+            VectorLinearRef lin = boost::dynamic_pointer_cast<VectorLinear>(*it);
+            if (lin)
+            {
+                
+            } else {
+                VectorPointsRef pt = boost::dynamic_pointer_cast<VectorPoints>(*it);
+                if (pt)
+                {
+                    
+                }
+                // Note: Ignoring triangles
+            }
+        }
+    }
+    
+    return closeDist2;
+}
+
+- (NSArray *)findVectorsNearScreenPt:(WhirlyKit::Point2f)screenPt geoPt:(WhirlyKit::Point2f)geoPt screenDist:(double)screenDist multi:(bool)multi
+{
+    NSMutableArray *foundObjs = [NSMutableArray array];
+
+    SelectionManager::PlacementInfo pInfo(visualView,layerThread.renderer);
+    geoPt = [visualView unwrapCoordinate:geoPt];
+    
+    @synchronized(userObjects)
+    {
+        for (MaplyComponentObject *userObj in userObjects)
+        {
+            if (userObj.vectors && userObj.isSelectable && userObj.enable)
+            {
+                for (MaplyVectorObject *vecObj in userObj.vectors)
+                {
+                    if (vecObj.selectable && userObj.enable)
+                    {
+                        // Note: Take visibility into account too
+                        MaplyCoordinate coord;
+                        coord.x = geoPt.x()-userObj.vectorOffset.x();
+                        coord.y = geoPt.y()-userObj.vectorOffset.y();
+                        if ([vecObj pointInAreal:coord])
+                        {
+                            [foundObjs addObject:vecObj];
+                            if (!multi)
+                                break;
+                        } else {
+                            // Check for distance to outline
+                            double dist2 = [self dist2Squared:vecObj within:screenDist touch:screenPt placeInfo:pInfo];
+                            if (dist2 < screenDist * screenDist)
+                            {
+                                [foundObjs addObject:vecObj];
+                                if (!multi)
+                                    break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!multi && [foundObjs count] > 0)
+                    break;
+            }
+        }
+    }
+    
+    return foundObjs;
+}
+
 // Do the logic for a selection
 // Runs in the layer thread
 - (void) userDidTapLayerThread:(WhirlyGlobeTapMessage *)msg
@@ -143,13 +253,11 @@ using namespace WhirlyGlobe;
             if (selObj.selectedObj)
                 [retSelectArr addObject:selObj];
         }
-        
-        // Found something.  Now find the associated object
     }
     
     // Next, try the vectors
-    // Note: This means we'll never get both vectors and other objects
-    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y())];
+    NSArray *vecObjs = [self findVectorsNearScreenPt:Point2f(msg.touchLoc.x,msg.touchLoc.y)geoPt:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) screenDist:23.0 multi:true];
+//    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y())];
     for (MaplyVectorObject *vecObj in vecObjs)
     {
         MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
@@ -162,10 +270,10 @@ using namespace WhirlyGlobe;
     
     // Tell the view controller about it
     dispatch_async(dispatch_get_main_queue(),^
-                   {
-                       [_viewController handleSelection:msg didSelect:retSelectArr];
-                   }
-                   );
+    {
+       [_viewController handleSelection:msg didSelect:retSelectArr];
+    }
+    );
 }
 
 // Check for a selection

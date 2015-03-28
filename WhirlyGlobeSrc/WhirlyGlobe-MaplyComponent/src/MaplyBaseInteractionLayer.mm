@@ -2441,7 +2441,6 @@ typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelIns
     return [self findVectorsInPoint:pt inView:nil multi:true];
 }
 
-
 - (NSArray *)findVectorsInPoint:(Point2f)pt inView:(MaplyBaseViewController*)vc multi:(bool)multi
 {
     NSMutableArray *foundObjs = [NSMutableArray array];
@@ -2467,7 +2466,8 @@ typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelIns
                             [foundObjs addObject:vecObj];
                             if (!multi)
                                 break;
-                        } else if (vc && [vecObj pointNearLinear:coord distance:20 inViewController:vc]) {
+                        } else
+                            if (vc && [vecObj pointNearLinear:coord distance:20 inViewController:vc]) {
                             [foundObjs addObject:vecObj];
                             if (!multi)
                                 break;
