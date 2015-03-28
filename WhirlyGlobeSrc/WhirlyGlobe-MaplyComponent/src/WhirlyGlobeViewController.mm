@@ -1281,9 +1281,18 @@ using namespace WhirlyGlobe;
         {
             
             SelectionManager::SelectedObject &theSelObj = selectedObjs[ii];
+            MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
             
-            id object = [interactLayer getSelectableObject:theSelObj.selectID];
-            if (object) [retSelectArr addObject:object];
+            SelectObjectSet::iterator it = selectObjectSet.find(SelectObject(theSelObj.selectID));
+            if (it != selectObjectSet.end())
+                selObj.selectedObj = it->obj;
+            
+            selObj.screenDist = theSelObj.screenDist;
+            selObj.screenDistToCenter = theSelObj.screenDistToCenter;
+            selObj.zDist = theSelObj.distIn3D;
+            
+            if (selObj.selectedObj)
+                [retSelectArr addObject:selObj];
         }
     }
     
@@ -1293,8 +1302,15 @@ using namespace WhirlyGlobe;
         if ([self geoPointFromScreen:screenPt geoCoord:&geoCoord])
         {
             NSArray *vecArr = [interactLayer findVectorsInPoint:Point2f(geoCoord.x,geoCoord.y) inView:self multi:true];
-            if (vecArr)
-                [retSelectArr addObjectsFromArray:vecArr];
+            for (MaplyVectorObject *vecObj in vecArr)
+            {
+                MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
+                selObj.selectedObj = vecObj;
+                selObj.screenDist = 0.0;
+                // Note: Not quite right
+                selObj.zDist = 0.0;
+                [retSelectArr addObject:selObj];
+            }
         }
     }
     
