@@ -311,6 +311,72 @@ double PolyImportance(const std::vector<Point3d> &poly,const Point3d &norm,Whirl
     return import;
 }
 
+// See if the given screen point is within or near the given polygon (after projection)
+bool ScreenPointNearPoly(const std::vector<Point3d> &poly,const Point3d &norm,WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSize,Point2d screenPt,double screenDist)
+{
+    for (unsigned int offi=0;offi<viewState.viewMatrices.size();offi++)
+    {
+        std::vector<Eigen::Vector4d> pts;
+        pts.reserve(poly.size());
+        for (unsigned int ii=0;ii<poly.size();ii++)
+        {
+            const Point3d &pt = poly[ii];
+            // Run through the model transform
+            Vector4d modPt = viewState.fullMatrices[offi] * Vector4d(pt.x(),pt.y(),pt.z(),1.0);
+            // And then the projection matrix.  Now we're in clip space
+            Vector4d projPt = viewState.projMatrix * modPt;
+            pts.push_back(projPt);
+        }
+        
+        // The points are in clip space, so clip!
+        std::vector<Eigen::Vector4d> clipSpacePts;
+        clipSpacePts.reserve(2*pts.size());
+        ClipHomogeneousPolygon(pts,clipSpacePts);
+        
+        // Outside the viewing frustum, so ignore it
+        if (clipSpacePts.empty())
+            continue;
+        
+        // Project to the screen
+        std::vector<Point2d> screenPts;
+        screenPts.reserve(clipSpacePts.size());
+        Point2d halfFrameSize(frameSize.x()/2.0,frameSize.y()/2.0);
+        for (unsigned int ii=0;ii<clipSpacePts.size();ii++)
+        {
+            Vector4d &outPt = clipSpacePts[ii];
+            Point2d screenPt(outPt.x()/outPt.w() * halfFrameSize.x()+halfFrameSize.x(),outPt.y()/outPt.w() * halfFrameSize.y()+halfFrameSize.y());
+            screenPts.push_back(screenPt);
+        }
+        
+        double screenArea = CalcLoopArea(screenPts);
+        screenArea = std::abs(screenArea);
+        if (boost::math::isnan(screenArea))
+            screenArea = 0.0;
+        
+        if (screenArea == 0.0)
+            return false;
+
+        // See if landed inside
+        if (PointInPolygon(screenPt,screenPts))
+            return true;
+        
+        // Check nearby edges
+        for (unsigned int ip=0;ip<screenPts.size();ip++)
+        {
+            const Point2d &p0 = screenPts[ip];
+            const Point2d &p1 = screenPts[(ip+1)%screenPts.size()];
+            double t;
+            Point2d closePt = ClosestPointOnLineSegment(p0,p1,screenPt,t);
+            float dist2 = (closePt-screenPt).squaredNorm();
+            if (dist2 < screenDist*screenDist)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
 - (bool)isInside:(WhirlyKit::Point3d)pt
 {
     // We should be on the inside of each plane
@@ -361,6 +427,41 @@ double PolyImportance(const std::vector<Point3d> &poly,const Point3d &norm,Whirl
     double scaleFactor = (_polys.size() > 1 ? 0.5 : 1.0);
     
     return totalImport*scaleFactor;
+}
+
+- (bool)pointIsNear:(const Point2d &)screenPt screenDist:(double)screenDist  viewState:(WhirlyKitViewState *)viewState frameSize:(WhirlyKit::Point2f)frameSize
+{
+    Point3d eyePos = viewState.eyePos;
+    
+    if (!viewState.coordAdapter->isFlat())
+    {
+        // If the viewer is inside the bounds, the node is maximimally important (duh)
+        if ([self isInside:eyePos])
+            return true;
+        
+        // Make sure that we're pointed toward the eye, even a bit
+        if (!_surfNormals.empty())
+        {
+            bool isFacing = false;
+            for (unsigned int ii=0;ii<_surfNormals.size();ii++)
+            {
+                const Vector3d &surfNorm = _surfNormals[ii];
+                if ((isFacing |= (surfNorm.dot(eyePos) >= 0.0)))
+                    break;
+            }
+            if (!isFacing)
+                return false;
+        }
+    }
+    
+    // Now work through the polygons and project each to the screen
+    for (unsigned int ii=0;ii<_polys.size();ii++)
+    {
+        if (ScreenPointNearPoly(_polys[ii], _normals[ii], viewState, frameSize, screenPt, screenDist))
+            return true;
+    }
+    
+    return false;
 }
 
 - (bool)isOnScreenForViewState:(WhirlyKitViewState *)viewState frameSize:(WhirlyKit::Point2f)frameSize
@@ -448,6 +549,26 @@ double ScreenImportance(WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSi
 //    NSLog(@"Import: %d: (%d,%d)  %f",nodeIdent.level,nodeIdent.x,nodeIdent.y,import);
     
     return import;
+}
+
+// Calculate the max pixel size for a tile
+bool TileIsNearScreenPoint(WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSize,WhirlyKit::CoordSystem *srcSystem,WhirlyKit::CoordSystemDisplayAdapter *coordAdapter,WhirlyKit::Mbr nodeMbr,WhirlyKit::Quadtree::Identifier &nodeIdent,NSMutableDictionary *attrs,const Point2d &screenPt,double screenDist)
+{
+    WhirlyKitDisplaySolid *dispSolid = attrs[@"DisplaySolid"];
+    if (!dispSolid)
+    {
+        dispSolid = [WhirlyKitDisplaySolid displaySolidWithNodeIdent:nodeIdent mbr:nodeMbr minZ:0.0 maxZ:0.0 srcSystem:srcSystem adapter:coordAdapter];
+        if (dispSolid)
+            attrs[@"DisplaySolid"] = dispSolid;
+        else
+            attrs[@"DisplaySolid"] = [NSNull null];
+    }
+    
+    // This means the tile is degenerate (as far as we're concerned)
+    if ([dispSolid isKindOfClass:[NSNull class]])
+        return false;
+
+    return [dispSolid pointIsNear:screenPt screenDist:screenDist viewState:viewState frameSize:frameSize];
 }
 
 // This version is for volumes with height

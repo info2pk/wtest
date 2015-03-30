@@ -68,6 +68,8 @@
 
 /// @brief Tile ID for the tile we're building
 @property (nonatomic) MaplyTileID tileID;
+/// @brief Coordinate system we're building the tile in
+@property (nonatomic,strong) MaplyCoordinateSystem *coordSys;
 /// @brief Bounding box in local coordinates scaled to meters
 @property (nonatomic) MaplyBoundingBox bbox;
 /// @brief Bounding box in geographic (radians)

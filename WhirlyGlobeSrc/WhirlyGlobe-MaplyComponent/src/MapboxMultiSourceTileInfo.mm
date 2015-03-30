@@ -288,6 +288,7 @@ public:
     MaplyVectorTileInfo *tileInfo = [[MaplyVectorTileInfo alloc] init];
     tileInfo.tileID = tileID;
     tileInfo.bbox = bbox;
+    tileInfo.coordSys = self.coordSys;
     MaplyBoundingBox geoBbox;
     [_imageLayer geoBoundsForTile:tileID bbox:&geoBbox];
     tileInfo.geoBBox = geoBbox;

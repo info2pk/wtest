@@ -45,6 +45,9 @@ double ScreenImportance(WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSi
 /// This version takes a min/max height and is optimized for volumes.
 double ScreenImportance(WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSize,int pixelsSquare,WhirlyKit::CoordSystem *srcSystem,WhirlyKit::CoordSystemDisplayAdapter *coordAdapter,WhirlyKit::Mbr nodeMbr, double minZ,double maxZ, WhirlyKit::Quadtree::Identifier &nodeIdent,NSMutableDictionary *attrs);
 
+/// Returns true if the point is within or near the given tile
+bool TileIsNearScreenPoint(WhirlyKitViewState *viewState,WhirlyKit::Point2f frameSize,WhirlyKit::CoordSystem *srcSystem,WhirlyKit::CoordSystemDisplayAdapter *coordAdapter,WhirlyKit::Mbr nodeMbr,WhirlyKit::Quadtree::Identifier &nodeIdent,NSMutableDictionary *attrs,const Point2d &screenPt,double screenDist);
+
 }
 
 /// A solid volume used to describe the display space a tile takes up.

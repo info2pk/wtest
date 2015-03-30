@@ -24,6 +24,11 @@
 #import "MaplyComponentObject.h"
 #import "MaplyTexture_private.h"
 
+namespace WhirlyKit
+{
+class TileSortData;
+}
+
 /** The Component Object is used to track all the resources a user created
     to represent something.  We pass this back to them so they can remove
     those resources later.
@@ -40,6 +45,7 @@
 @property (nonatomic,assign) WhirlyKit::SimpleIDSet &billIDs;
 @property (nonatomic,assign) WhirlyKit::SimpleIDSet &geomIDs;
 @property (nonatomic,assign) WhirlyKit::SimpleIDSet &selectIDs;
+@property (nonatomic,assign) WhirlyKit::TileSortData *tileSortData;
 @property (nonatomic,assign) std::set<MaplyTexture *> &textures;
 @property (nonatomic,strong) NSArray *vectors;
 @property (nonatomic) WhirlyKit::Point2d &vectorOffset;

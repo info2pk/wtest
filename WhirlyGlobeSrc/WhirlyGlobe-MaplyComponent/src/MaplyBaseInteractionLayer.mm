@@ -38,6 +38,35 @@
 using namespace Eigen;
 using namespace WhirlyKit;
 
+namespace WhirlyKit
+{
+    
+void TileSortData::init(MaplyTileID inTileID,MaplyCoordinateSystem *inCoordSys)
+{
+    tileID = inTileID;
+    coordSys = inCoordSys;
+    attrs = [NSMutableDictionary dictionary];
+    
+    nodeIdent.level = tileID.level;
+    nodeIdent.x = tileID.x;
+    nodeIdent.y = tileID.y;
+    
+    Point2f chunkSize(coordSys->ur.x-coordSys->ll.x,coordSys->ur.y-coordSys->ll.y);
+    chunkSize.x() /= (1<<nodeIdent.level);
+    chunkSize.y() /= (1<<nodeIdent.level);
+    
+    Point2f org(coordSys->ll.x,coordSys->ll.y);
+    nodeMbr.ll() = Point2f(chunkSize.x()*nodeIdent.x,chunkSize.y()*nodeIdent.y) + org;
+    nodeMbr.ur() = Point2f(chunkSize.x()*(nodeIdent.x+1),chunkSize.y()*(nodeIdent.y+1)) + org;
+}
+
+bool TileSortData::pointIsNear(WhirlyKitViewState *viewState,const WhirlyKit::Point2f frameSize,const Point2d screenPt,double screenDist)
+{
+    return TileIsNearScreenPoint(viewState,frameSize,coordSys->coordSystem,viewState.coordAdapter,nodeMbr,nodeIdent,attrs,screenPt,screenDist);
+}
+    
+}
+
 // Sample a great circle and throw in an interpolated height at each point
 void SampleGreatCircle(MaplyCoordinate startPt,MaplyCoordinate endPt,float height,std::vector<Point3f> &pts,WhirlyKit::CoordSystemDisplayAdapter *coordAdapter,float eps)
 {
@@ -178,7 +207,10 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
     pthread_mutex_destroy(&imageLock);
     pthread_mutex_destroy(&changeLock);
     pthread_mutex_destroy(&tempContextLock);
-    
+
+    for (TileSortSet::iterator it = tileData.begin(); it != tileData.end(); ++it)
+        delete *it;
+
     for (ThreadChangeSet::iterator it = perThreadChanges.begin();
          it != perThreadChanges.end();++it)
     {
@@ -1109,6 +1141,15 @@ typedef std::set<ThreadChanges> ThreadChangeSet;
                 compObj.vectorOffset.y() = [inDesc[kMaplyVecCenterY] doubleValue];
         }
         compObj.vectors = vectors;
+        
+        // Look for an additional tile ID for spatial searches
+        MaplyCompleteTileID *tileInfo = inDesc[@"tileInfo"];
+        if (tileInfo)
+        {
+            pthread_mutex_lock(&selectLock);
+            compObj.tileSortData = [self addTileObject:compObj toTile:tileInfo.tileID coordSys:tileInfo.coordSys];
+            pthread_mutex_unlock(&selectLock);
+        }
     }
     
     @synchronized(userObjects)
@@ -2280,6 +2321,13 @@ typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelIns
                     pthread_mutex_unlock(&selectLock);
                 }
                 
+                // And any tile data
+                if (userObj.tileSortData)
+                {
+                    pthread_mutex_lock(&selectLock);
+                    [self removeTileObject:userObj fromTile:userObj.tileSortData];
+                    pthread_mutex_unlock(&selectLock);
+                }
             }
             
             @synchronized(userObjects)
@@ -2433,6 +2481,45 @@ typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelIns
     }
 }
 
+// Add the given vectors to the given tile for sorting
+- (TileSortData *) addTileObject:(MaplyComponentObject *)compObj toTile:(MaplyTileID)tileID coordSys:(MaplyCoordinateSystem *)coordSys
+{
+    TileSortData dummyTile;
+    dummyTile.tileID = tileID;
+    dummyTile.coordSys = coordSys;
+    
+    // Look for an existing tile
+    TileSortData *tile = NULL;
+    TileSortSet::iterator it = tileData.find(&dummyTile);
+    if (it == tileData.end())
+    {
+        tile = new TileSortData();
+        tile->init(tileID,coordSys);
+        tileData.insert(tile);
+    } else
+        tile = *it;
+
+    tile->compObjs.insert(compObj);
+    
+    return tile;
+}
+
+// Remove the vectors from the given tile
+- (void)removeTileObject:(MaplyComponentObject *)compObj fromTile:(WhirlyKit::TileSortData *)tile
+{
+    tile->compObjs.erase(compObj);
+    // Clean up the tile entry
+    if (tile->compObjs.empty())
+    {
+        TileSortSet::iterator it = tileData.find(tile);
+        if (it != tileData.end())
+        {
+            tileData.erase(it);
+            delete *it;
+        } else
+            NSLog(@"Tried to delete tile data object that wasn't there.");
+    }
+}
 
 // Search for a point inside any of our vector objects
 // Runs in layer thread

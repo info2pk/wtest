@@ -32,7 +32,11 @@ bool IntersectUnitSphere(Point3d org,Eigen::Vector3d dir,Point3d &hit,double *t=
 
 /// Returns true if the given point is inside the close polygon
 ///  defined by ring.  Standard winding-ish test.
-bool PointInPolygon(Point2f pt,const std::vector<Point2f> &ring);
+bool PointInPolygon(const Point2f &pt,const std::vector<Point2f> &ring);
+
+/// Returns true if the given point is inside the close polygon
+///  defined by ring.  Standard winding-ish test.
+bool PointInPolygon(const Point2d &pt,const std::vector<Point2d> &ring);
 
 /// Run a convex polygon intersection check.  Returns true if they overlap
 bool ConvexPolyIntersect(const std::vector<Point2f> &pts0,const std::vector<Point2f> &pts1);

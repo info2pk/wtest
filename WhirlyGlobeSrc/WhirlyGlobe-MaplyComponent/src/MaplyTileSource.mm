@@ -25,5 +25,8 @@ NSString *MaplyTileIDString(MaplyTileID tileID)
     return [NSString stringWithFormat:@"%d_%d_%d",tileID.x,tileID.y,tileID.level];
 }
 
+@implementation MaplyCompleteTileID
+@end
+
 @implementation MaplyFrameStatus
 @end

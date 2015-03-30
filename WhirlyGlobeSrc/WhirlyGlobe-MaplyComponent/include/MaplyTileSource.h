@@ -50,6 +50,19 @@ typedef struct
     int x, y, level;
 } MaplyTileID;
 
+/** @brief This stores both the tile ID and the coordinate system.
+    @details In cases where we need to identify a tile completely, this stores both the ID and the coordinate system.
+  */
+@interface MaplyCompleteTileID : NSObject
+
+/// @brief Coordinate system for this Tile
+@property (nonatomic,strong) MaplyCoordinateSystem *coordSys;
+
+/// @brief Tile ID (x,y,level)
+@property (nonatomic) MaplyTileID tileID;
+
+@end
+
 /// @brief Convert a MaplyTileID to an NSString
 NSString *MaplyTileIDString(MaplyTileID tileID);
 

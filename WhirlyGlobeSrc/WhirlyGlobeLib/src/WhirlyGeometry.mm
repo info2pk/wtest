@@ -70,7 +70,7 @@ bool IntersectUnitSphere(Point3d org,Vector3d dir,Point3d &hit,double *retT)
 // Point in poly routine
 // Courtesy: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
 
-bool PointInPolygon(Point2f pt,const std::vector<Point2f> &ring)
+bool PointInPolygon(const Point2f &pt,const std::vector<Point2f> &ring)
 {
 	size_t ii, jj;
 	bool c = false;
@@ -80,6 +80,18 @@ bool PointInPolygon(Point2f pt,const std::vector<Point2f> &ring)
 			c = !c;
 	}
 	return c;
+}
+
+bool PointInPolygon(const Point2d &pt,const std::vector<Point2d> &ring)
+{
+    size_t ii, jj;
+    bool c = false;
+    for (ii = 0, jj = ring.size()-1; ii < ring.size(); jj = ii++) {
+        if ( ((ring[ii].y()>pt.y()) != (ring[jj].y()>pt.y())) &&
+            (pt.x() < (ring[jj].x()-ring[ii].x()) * (pt.y()-ring[ii].y()) / (ring[jj].y()-ring[ii].y()) + ring[ii].x()) )
+            c = !c;
+    }
+    return c;
 }
     
 bool ConvexPolyIntersect(const std::vector<Point2f> &pts0,const std::vector<Point2f> &pts1)

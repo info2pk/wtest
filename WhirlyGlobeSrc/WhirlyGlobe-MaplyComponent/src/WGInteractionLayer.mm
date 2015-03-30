@@ -173,6 +173,72 @@ using namespace WhirlyGlobe;
     SelectionManager::PlacementInfo pInfo(visualView,layerThread.renderer);
     geoPt = [visualView unwrapCoordinate:geoPt];
     
+    int numVectorsTouched = 0;
+
+#if 1
+    // Note: Is this handling retina?
+    WhirlyGlobeViewState *viewState = [[WhirlyGlobeViewState alloc] initWithView:globeView renderer:layerThread.renderer];
+    Point2f frameSize(layerThread.renderer.framebufferWidth,layerThread.renderer.framebufferHeight);
+    Point2d screenPt2d(screenPt.x(),screenPt.y());
+    
+    // Note: This is NatGeo only.  We are *only* looking at the tile data for vectors
+
+    // Work through the active tiles and see if the point is in or near any of them
+    @synchronized(userObjects)
+    {
+        pthread_mutex_lock(&selectLock);
+        
+        for (TileSortSet::iterator it = tileData.begin(); it != tileData.end(); ++it)
+        {
+            TileSortData *tile = *it;
+            if (tile->pointIsNear(viewState,frameSize,screenPt2d,screenDist))
+            {
+//                NSLog(@"Testing tile %d: (%d,%d)",tile->tileID.level,tile->tileID.x,tile->tileID.y);
+                
+                for (MaplyComponentObject *compObj : tile->compObjs)
+                {
+                    if (compObj.vectors && compObj.isSelectable && compObj.enable)
+                    {
+                        for (MaplyVectorObject *vecObj in compObj.vectors)
+                        {
+                            if (vecObj.selectable && compObj.enable)
+                            {
+                                numVectorsTouched++;
+                                // Note: Take visibility into account too
+                                MaplyCoordinate coord;
+                                coord.x = geoPt.x()-compObj.vectorOffset.x();
+                                coord.y = geoPt.y()-compObj.vectorOffset.y();
+                                if ([vecObj pointInAreal:coord])
+                                {
+                                    [foundObjs addObject:vecObj];
+                                    if (!multi)
+                                        break;
+                                } else {
+                                    // Check for distance to outline
+                                    double dist2 = [self dist2Squared:vecObj within:screenDist touch:screenPt placeInfo:pInfo];
+                                    if (dist2 < screenDist * screenDist)
+                                    {
+                                        [foundObjs addObject:vecObj];
+                                        if (!multi)
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!multi && [foundObjs count] > 0)
+                            break;
+                    }
+                }
+            }
+        }
+        
+        pthread_mutex_unlock(&selectLock);
+    }
+    
+#else
+    
+    // Note: This version looks through all component objects
     @synchronized(userObjects)
     {
         for (MaplyComponentObject *userObj in userObjects)
@@ -183,6 +249,7 @@ using namespace WhirlyGlobe;
                 {
                     if (vecObj.selectable && userObj.enable)
                     {
+                        numVectorsTouched++;
                         // Note: Take visibility into account too
                         MaplyCoordinate coord;
                         coord.x = geoPt.x()-userObj.vectorOffset.x();
@@ -210,6 +277,9 @@ using namespace WhirlyGlobe;
             }
         }
     }
+#endif
+    
+//    NSLog(@"Touched %d vectors",numVectorsTouched);
     
     return foundObjs;
 }

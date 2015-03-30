@@ -27,6 +27,54 @@
 #import "MaplyBaseViewController.h"
 #import "MaplyQuadImageTilesLayer.h"
 #import "MaplyTextureAtlas_private.h"
+#import "MaplyCoordinateSystem_private.h"
+
+namespace WhirlyKit
+{
+    
+// Used to store vector objects sorted by tile for selection
+class TileSortData
+{
+public:
+    MaplyTileID tileID;
+    MaplyCoordinateSystem *coordSys;
+    NSMutableDictionary *attrs;
+    std::set<MaplyComponentObject * __weak> compObjs;
+    Mbr nodeMbr;
+    Quadtree::Identifier nodeIdent;
+
+    // Set up data members
+    void init(MaplyTileID inTileID,MaplyCoordinateSystem *inCoordSys);
+    
+    // Check if the given point is near where the tile appears on the screen
+    bool pointIsNear(WhirlyKitViewState *viewState,const WhirlyKit::Point2f frameSize,const Point2d screenPt,double screenDist);
+};
+
+// Used to sort TileSortData pointers
+typedef struct
+{
+    bool operator () (const TileSortData *a,const TileSortData *b) const
+    {
+        if (a->coordSys->coordSystem->isSameAs(b->coordSys->coordSystem))
+        {
+            if (a->tileID.level == b->tileID.level)
+            {
+                if (a->tileID.x == b->tileID.x)
+                {
+                    return a->tileID.y < b->tileID.y;
+                }
+                return a->tileID.x < b->tileID.x;
+            }
+            return a->tileID.level < b->tileID.level;
+        }
+        // Note: This is not exactly canonical
+        return a->coordSys->coordSystem < b->coordSys->coordSystem;
+    }
+} TileSortDataSorter;
+    
+typedef std::set<TileSortData *,TileSortDataSorter> TileSortSet;
+
+}
 
 @interface MaplyBaseInteractionLayer : NSObject<WhirlyKitLayer>
 {
@@ -50,6 +98,9 @@
 
     // Component objects created for the user
     NSMutableSet *userObjects;
+    
+    // Used to sort vectors into tiles for selection
+    WhirlyKit::TileSortSet tileData;
     
     // Texture atlas manager
     MaplyTextureAtlasGroup *atlasGroup;
@@ -148,6 +199,11 @@
 // Do a point in poly check for vectors we're representing
 - (NSArray *)findVectorsInPoint:(WhirlyKit::Point2f)pt;
 - (NSArray *)findVectorsInPoint:(WhirlyKit::Point2f)pt inView:(MaplyBaseViewController*)vc multi:(bool)multi;
+
+// Add the given vectors to the given tile for sorting
+- (WhirlyKit::TileSortData *)addTileObject:(MaplyComponentObject *)compObj toTile:(MaplyTileID)tileID coordSys:(MaplyCoordinateSystem *)coordSys;
+// Remove the vectors from the given tile
+- (void)removeTileObject:(MaplyComponentObject *)compObj fromTile:(WhirlyKit::TileSortData *)tile;
 
 // Find the Maply object corresponding to the given ID (from the selection manager).
 // Thread-safe

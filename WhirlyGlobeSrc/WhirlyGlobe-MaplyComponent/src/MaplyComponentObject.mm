@@ -27,6 +27,7 @@
     self = [super init];
     _isSelectable = true;
     _enable = true;
+    _tileSortData = NULL;
     
     return self;
 }
