@@ -176,6 +176,8 @@ using namespace WhirlyGlobe;
     int numVectorsTouched = 0;
 
 #if 1
+    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
+    
     // Note: Is this handling retina?
     WhirlyGlobeViewState *viewState = [[WhirlyGlobeViewState alloc] initWithView:globeView renderer:layerThread.renderer];
     Point2f frameSize(layerThread.renderer.framebufferWidth,layerThread.renderer.framebufferHeight);
@@ -236,6 +238,8 @@ using namespace WhirlyGlobe;
         pthread_mutex_unlock(&selectLock);
     }
     
+    NSLog(@"Search took %f ms, touched %d objects",(CFAbsoluteTimeGetCurrent()-now)*1000,numVectorsTouched);
+    
 #else
     
     // Note: This version looks through all component objects
@@ -278,8 +282,6 @@ using namespace WhirlyGlobe;
         }
     }
 #endif
-    
-//    NSLog(@"Touched %d vectors",numVectorsTouched);
     
     return foundObjs;
 }
