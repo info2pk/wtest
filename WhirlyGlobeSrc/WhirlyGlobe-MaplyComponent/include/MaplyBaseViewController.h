@@ -485,6 +485,11 @@ typedef enum {MaplyThreadCurrent,MaplyThreadAny} MaplyThreadMode;
   */
 - (void)moveAnnotationToTop:(MaplyAnnotation *)annotate;
 
+/** @brief Move the given annotation out of the top of the stack.
+ @details This will set the keepOnTop flag and reorder the annotations.
+ */
+- (void)removeAnnotationFromTop:(MaplyAnnotation *)annotate;
+
 /** @brief Remove the given annotation from the UIView.
     @details This will dismiss the given annotation with its animation.
   */

@@ -747,7 +747,27 @@ static const float PerfOutputDelay = 15.0;
     NSMutableArray *topViews = [NSMutableArray array];
     for (MaplyAnnotation *ann in annotations)
     {
-        if (ann.keepOnTop)
+        if (ann.keepOnTop && ann.calloutView.superview == glView)
+        {
+            [ann.calloutView removeFromSuperview];
+            [topViews addObject:ann.calloutView];
+        }
+    }
+    for (UIView *topView in topViews)
+    {
+        [glView addSubview:topView];
+    }
+}
+
+- (void)removeAnnotationFromTop:(MaplyAnnotation *)annotate
+{
+    annotate.keepOnTop = false;
+    
+    // Make sure we're not stepping on a view that wants to be on top
+    NSMutableArray *topViews = [NSMutableArray array];
+    for (MaplyAnnotation *ann in annotations)
+    {
+        if (ann.keepOnTop && ann.calloutView.superview == glView)
         {
             [ann.calloutView removeFromSuperview];
             [topViews addObject:ann.calloutView];
