@@ -269,7 +269,7 @@ TileBuilder::TileBuilder(CoordSystem *coordSys,Mbr mbr,WhirlyKit::Quadtree *quad
     ignoreEdgeMatching(false),
     coverPoles(true),
     glFormat(WKTileIntRGBA), singleByteSource(WKSingleRGB),
-    defaultSphereTessX(10), defaultSphereTessY(10),
+    defaultSphereTessX(16), defaultSphereTessY(16),
     texelBinSize(64),
     drawAtlas(NULL),
     borderTexel(0),

@@ -98,7 +98,7 @@ using namespace WhirlyKit;
         _activeTextures = -1;
         _borderTexel = 1;
         _enable = true;
-        defaultTessX = defaultTessY = 10;
+        defaultTessX = defaultTessY = 16;
         canLoadFrames = [inDataSource respondsToSelector:@selector(quadTileLoader:startFetchForLevel:col:row:frame:attrs:)];
         pthread_mutex_init(&tileLock, NULL);
     }
