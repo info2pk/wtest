@@ -333,6 +333,15 @@
   */
 - (void)animateWithDelegate:(NSObject<WhirlyGlobeViewControllerAnimationDelegate> *)animationDelegate time:(NSTimeInterval)howLong;
 
+/** @brief Animate with a delegate over time, with delay.
+ @details Fill in the WhirlyGlobeViewControllerAnimationDelegate and you can control the visual view on a frame by frame basis.  You'll get called back at the appropriate time on the main thread over the time period.
+ @details You'll also be called one at the end of the animation to establish the final position.
+ @param animationDelegate The objects that implements the WhirlyGlobeViewControllerAnimationDelegate protocol.
+ @param howLong How long the animation will run from the start time.
+  @param delay How long the animation will delay before running.
+ */
+- (void)animateWithDelegate:(NSObject<WhirlyGlobeViewControllerAnimationDelegate> *)animationDelegate time:(NSTimeInterval)howLong delay:(NSTimeInterval)delay;
+
 /** @brief Set the center of the screen to the given position immediately.
     @param newPos The geographic position (lon/lat in radians) to move to.
  */

@@ -1346,10 +1346,15 @@ using namespace WhirlyGlobe;
 
 - (void)animateWithDelegate:(NSObject<WhirlyGlobeViewControllerAnimationDelegate> *)inAnimationDelegate time:(NSTimeInterval)howLong
 {
-    NSTimeInterval now = CFAbsoluteTimeGetCurrent();
-    animationDelegate = inAnimationDelegate;
-    animationDelegateEnd = now+howLong;
+    [self animateWithDelegate:inAnimationDelegate time:howLong delay:0];
+}
 
+- (void)animateWithDelegate:(NSObject<WhirlyGlobeViewControllerAnimationDelegate> *)inAnimationDelegate time:(NSTimeInterval)howLong delay:(NSTimeInterval)delay
+{
+    NSTimeInterval start = CFAbsoluteTimeGetCurrent()+delay;
+    animationDelegate = inAnimationDelegate;
+    animationDelegateEnd = start+howLong;
+    
     // Figure out the current state
     WhirlyGlobeViewControllerAnimationState *stateStart = [[WhirlyGlobeViewControllerAnimationState alloc] init];
     startQuat = globeView.rotQuat;
@@ -1363,7 +1368,7 @@ using namespace WhirlyGlobe;
     stateStart.height = height;
     
     // Tell the delegate what we're up to
-    [animationDelegate globeViewController:self startState:stateStart startTime:now endTime:animationDelegateEnd];
+    [animationDelegate globeViewController:self startState:stateStart startTime:start endTime:animationDelegateEnd];
     
     globeView.delegate = self;
 }
