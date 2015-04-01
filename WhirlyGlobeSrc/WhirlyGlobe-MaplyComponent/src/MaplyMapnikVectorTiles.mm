@@ -41,6 +41,7 @@
 #import "MapnikStyleSet.h"
 #import "MapboxVectorStyleSet.h"
 #import "decode.h"
+#import "NSData+Zlib.h"
 
 using namespace Eigen;
 using namespace WhirlyKit;
@@ -97,6 +98,12 @@ static double MAX_EXTENT = 20037508.342789244;
     unsigned featureCount = 0;
     
     NSMutableDictionary *featureStyles = [NSMutableDictionary new];
+    
+    if ([tileData isCompressed])
+    {
+        tileData = [tileData uncompressGZip];
+    }
+
     
     //now attempt to open protobuf
     vector_tile::Tile tile;

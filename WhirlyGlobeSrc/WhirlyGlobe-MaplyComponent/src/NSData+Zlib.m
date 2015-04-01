@@ -24,9 +24,18 @@
 @implementation NSData(zlib)
 - (BOOL)isCompressed
 {
-  	return self.length > 2 &&
-      (uint8_t)((const char*)self.bytes)[0] == 0x78 &&
-      (uint8_t)((const char*)self.bytes)[1] == 0x9C;
+    if (self.length <= 2)
+        return false;
+
+    if ((uint8_t)((const char*)self.bytes)[0] == 0x78 &&
+      (uint8_t)((const char*)self.bytes)[1] == 0x9C)
+        return true;
+
+    if ((uint8_t)((const char*)self.bytes)[0] == 0x1F &&
+        (uint8_t)((const char*)self.bytes)[1] == 0x8B)
+        return true;
+    
+    return false;
 }
 
 
