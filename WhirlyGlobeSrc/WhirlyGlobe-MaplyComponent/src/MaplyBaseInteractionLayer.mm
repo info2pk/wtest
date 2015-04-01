@@ -2553,11 +2553,13 @@ typedef std::set<GeomModelInstances *,struct GeomModelInstancesCmp> GeomModelIns
                             [foundObjs addObject:vecObj];
                             if (!multi)
                                 break;
-                        } else
-                            if (vc && [vecObj pointNearLinear:coord distance:20 inViewController:vc]) {
-                            [foundObjs addObject:vecObj];
-                            if (!multi)
-                                break;
+                        } else {
+//                            if (vc && [vecObj pointNearLinear:coord distance:20 inViewController:vc])
+//                            {
+//                                [foundObjs addObject:vecObj];
+//                                if (!multi)
+//                                    break;
+//                            }
                         }
                     }
                 }
