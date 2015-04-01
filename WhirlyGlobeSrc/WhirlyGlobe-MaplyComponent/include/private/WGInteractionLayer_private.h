@@ -54,4 +54,7 @@
 // It will call the given selector if there was no selection
 - (void) userDidTap:(WhirlyGlobeTapMessage *)msg;
 
+// Manually call to the find objects methods
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt geoPoint:(const WhirlyKit::Point2d &)geoPt includeVectors:(BOOL)includeVectors;
+
 @end

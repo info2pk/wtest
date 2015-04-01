@@ -1265,56 +1265,11 @@ using namespace WhirlyGlobe;
 
 - (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt includeVectors:(BOOL)includeVectors
 {
-    // Use to map IDs in the selection layer to objects the user passed in
-    SelectObjectSet selectObjectSet;
+    MaplyCoordinate geoCoord;
+    [self geoPointFromScreen:screenPt geoCoord:&geoCoord];
     
-    // First, we'll look for labels and markers
-    SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
-    std::vector<SelectionManager::SelectedObject> selectedObjs;
-    selectManager->pickObjects(Point2f(screenPt.x,screenPt.y),radius,globeView,selectedObjs);
-    
-    NSMutableArray *retSelectArr = [NSMutableArray array];
-    if (!selectedObjs.empty())
-    {
-        // Work through the objects the manager found, creating entries for each
-        for (unsigned int ii=0;ii<selectedObjs.size();ii++)
-        {
-            
-            SelectionManager::SelectedObject &theSelObj = selectedObjs[ii];
-            MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
-            
-            SelectObjectSet::iterator it = selectObjectSet.find(SelectObject(theSelObj.selectID));
-            if (it != selectObjectSet.end())
-                selObj.selectedObj = it->obj;
-            
-            selObj.screenDist = theSelObj.screenDist;
-            selObj.screenDistToCenter = theSelObj.screenDistToCenter;
-            selObj.zDist = theSelObj.distIn3D;
-            
-            if (selObj.selectedObj)
-                [retSelectArr addObject:selObj];
-        }
-    }
-    
-    if (includeVectors)
-    {
-        MaplyCoordinate geoCoord;
-        if ([self geoPointFromScreen:screenPt geoCoord:&geoCoord])
-        {
-            NSArray *vecArr = [interactLayer findVectorsInPoint:Point2f(geoCoord.x,geoCoord.y) inView:self multi:true];
-            for (MaplyVectorObject *vecObj in vecArr)
-            {
-                MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
-                selObj.selectedObj = vecObj;
-                selObj.screenDist = 0.0;
-                // Note: Not quite right
-                selObj.zDist = 0.0;
-                [retSelectArr addObject:selObj];
-            }
-        }
-    }
-    
-    return [NSArray arrayWithArray:retSelectArr];
+    Point2d geo2d(geoCoord.x,geoCoord.y);
+    return [(WGInteractionLayer *)interactLayer findObjectsWithinRadius:radius ofLocation:screenPt geoPoint:geo2d includeVectors:includeVectors];
 }
 
 #pragma mark - WhirlyGlobeAnimationDelegate
