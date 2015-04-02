@@ -166,7 +166,7 @@ using namespace WhirlyGlobe;
     return closeDist2;
 }
 
-- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt geoPoint:(const Point2d &)geoPt includeVectors:(BOOL)includeVectors
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt geoPoint:(const Point2d &)geoPt includeVectors:(BOOL)includeVectors nearbyVectors:(BOOL)nearbyVectors
 {
     // First, we'll look for labels and markers
     SelectionManager *selectManager = (SelectionManager *)scene->getManager(kWKSelectionManager);
@@ -194,10 +194,17 @@ using namespace WhirlyGlobe;
                 [retSelectArr addObject:selObj];
         }
     }
+    if (!includeVectors) return retSelectArr;
     
     // Next, try the vectors
-    NSArray *vecObjs = [self findVectorsNearScreenPt:Point2f(screenPt.x,screenPt.y) geoPt:Point2f(geoPt.x(),geoPt.y()) screenDist:ScreenSearchDist multi:true];
-    //    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y())];
+    NSArray *vecObjs;
+    if (nearbyVectors) {
+        vecObjs = [self findVectorsNearScreenPt:Point2f(screenPt.x,screenPt.y) geoPt:Point2f(geoPt.x(),geoPt.y()) screenDist:ScreenSearchDist multi:true];
+    }
+    else {
+        vecObjs = [self findVectorsInPoint:Point2f(geoPt.x(),geoPt.y())];
+    }
+    
     for (MaplyVectorObject *vecObj in vecObjs)
     {
         MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
