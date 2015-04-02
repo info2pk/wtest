@@ -1263,13 +1263,13 @@ using namespace WhirlyGlobe;
     return nil;
 }
 
-- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt includeVectors:(BOOL)includeVectors
+- (NSArray *)findObjectsWithinRadius:(CGFloat)radius ofLocation:(CGPoint)screenPt includeVectors:(BOOL)includeVectors nearbyVectors:(BOOL)nearbyVectors
 {
     MaplyCoordinate geoCoord;
     [self geoPointFromScreen:screenPt geoCoord:&geoCoord];
     
     Point2d geo2d(geoCoord.x,geoCoord.y);
-    return [(WGInteractionLayer *)interactLayer findObjectsWithinRadius:radius ofLocation:screenPt geoPoint:geo2d includeVectors:includeVectors];
+    return [(WGInteractionLayer *)interactLayer findObjectsWithinRadius:radius ofLocation:screenPt geoPoint:geo2d includeVectors:includeVectors nearbyVectors:nearbyVectors];
 }
 
 #pragma mark - WhirlyGlobeAnimationDelegate
