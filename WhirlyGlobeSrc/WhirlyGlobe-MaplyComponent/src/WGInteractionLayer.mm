@@ -257,7 +257,8 @@ using namespace WhirlyGlobe;
                                 coord.y = geoPt.y()-compObj.vectorOffset.y();
                                 if ([vecObj pointInAreal:coord])
                                 {
-                                    [foundObjs addObject:vecObj];
+                                    // Put these at the beginning
+                                    [foundObjs insertObject:vecObj atIndex:0];
                                     if (!multi)
                                         break;
                                 } else {
@@ -265,6 +266,7 @@ using namespace WhirlyGlobe;
                                     double dist2 = [self dist2Squared:vecObj within:screenDist touch:screenPt placeInfo:pInfo];
                                     if (dist2 < screenDist * screenDist)
                                     {
+                                        // Put these at the end
                                         [foundObjs addObject:vecObj];
                                         if (!multi)
                                             break;
