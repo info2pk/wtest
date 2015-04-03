@@ -383,27 +383,62 @@ static const float ScreenSearchDist = 27.0;
                 [retSelectArr addObject:selObj];
         }
     }
-    
-    // Next, try the vectors
-    // Note: Just interiors of vectors
-    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) inView:nil multi:true];
-//    NSArray *vecObjs = [self findVectorsNearScreenPt:Point2f(msg.touchLoc.x,msg.touchLoc.y)geoPt:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) screenDist:ScreenSearchDist multi:true];
-    for (MaplyVectorObject *vecObj in vecObjs)
-    {
-        MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
-        selObj.selectedObj = vecObj;
-        selObj.screenDist = 0.0;
-        // Note: Not quite right
-        selObj.zDist = 0.0;
-        [retSelectArr addObject:selObj];
-    }
-    
-    // Tell the view controller about it
+
+    // Tell the view controller about it, first pass
+    NSArray *firstNoticeObjs = [NSArray arrayWithArray:retSelectArr];
     dispatch_async(dispatch_get_main_queue(),^
     {
-       [_viewController handleSelection:msg didSelect:retSelectArr];
+       [_viewController handleSelection:msg didSelect:firstNoticeObjs];
+    });
+
+    // Next, the interiors of the vectors
+    NSArray *vecObjs = [self findVectorsInPoint:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) inView:nil multi:true];
+    if ([vecObjs count] > 0)
+    {
+        NSMutableArray *secondNoticeObjs = [NSMutableArray arrayWithArray:retSelectArr];
+        for (MaplyVectorObject *vecObj in vecObjs)
+        {
+            MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
+            selObj.selectedObj = vecObj;
+            selObj.screenDist = 0.0;
+            // Note: Not quite right
+            selObj.zDist = 0.0;
+            [secondNoticeObjs addObject:selObj];
+        }
+        
+        // Tell the view controller about it, second pass
+        if ([secondNoticeObjs count] > [firstNoticeObjs count])
+        {
+            dispatch_async(dispatch_get_main_queue(),^
+            {
+               [_viewController handleSelection:msg didSelect:secondNoticeObjs];
+            }
+            );
+        }
     }
-    );
+
+    // Last, the interiors and nearby vectors
+    NSArray *allVecObjs = [self findVectorsNearScreenPt:Point2f(msg.touchLoc.x,msg.touchLoc.y)geoPt:Point2f(msg.whereGeo.x(),msg.whereGeo.y()) screenDist:ScreenSearchDist multi:true];
+    if ([allVecObjs count] > [vecObjs count])
+    {
+        NSMutableArray *thirdNoticeObjs = [NSMutableArray arrayWithArray:retSelectArr];
+        for (MaplyVectorObject *vecObj in allVecObjs)
+        {
+            MaplySelectedObject *selObj = [[MaplySelectedObject alloc] init];
+            selObj.selectedObj = vecObj;
+            selObj.screenDist = 0.0;
+            // Note: Not quite right
+            selObj.zDist = 0.0;
+            [thirdNoticeObjs addObject:selObj];
+        }
+        
+        // Tell the view controller about it, second pass
+        dispatch_async(dispatch_get_main_queue(),^
+                       {
+                           [_viewController handleSelection:msg didSelect:thirdNoticeObjs];
+                       }
+                       );
+    }
 }
 
 // Check for a selection
