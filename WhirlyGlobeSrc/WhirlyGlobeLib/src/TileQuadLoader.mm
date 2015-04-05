@@ -153,11 +153,14 @@ using namespace WhirlyKit;
     
     ChangeSet theChangeRequests;
     
+    bool tileWasUnloadedPresent = [dataSource respondsToSelector:@selector(tileWasUnloadedLevel:col:row:)];
     pthread_mutex_lock(&tileLock);
     for (LoadedTileSet::iterator it = tileSet.begin();
          it != tileSet.end(); ++it)
     {
         LoadedTile *tile = *it;
+        if (tileWasUnloadedPresent)
+            [dataSource tileWasUnloadedLevel:tile->nodeInfo.ident.level col:tile->nodeInfo.ident.x row:tile->nodeInfo.ident.y];
         tile->clearContents(tileBuilder,theChangeRequests);
     }
     pthread_mutex_unlock(&tileLock);
