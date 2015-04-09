@@ -822,7 +822,9 @@ static const float ScreenOverlap = 0.1;
         // OpenGL ES measures data in PIXELS
         // Create a graphics context with the target size measured in POINTS
         NSInteger widthInPoints, heightInPoints;
-        if (NULL != UIGraphicsBeginImageContextWithOptions) {
+        if (NULL != &UIGraphicsBeginImageContextWithOptions) {
+            NSLog(@"here?");
+            
             // On iOS 4 and later, use UIGraphicsBeginImageContextWithOptions to take the scale into consideration
             // Set the scale parameter to your OpenGL ES view's contentScaleFactor
             // so that you get a high-resolution snapshot when its value is greater than 1.0
@@ -832,6 +834,8 @@ static const float ScreenOverlap = 0.1;
             UIGraphicsBeginImageContextWithOptions(CGSizeMake(widthInPoints, heightInPoints), NO, scale);
         }
         else {
+            NSLog(@"shouldn't be here");
+            
             // On iOS prior to 4, fall back to use UIGraphicsBeginImageContext
             widthInPoints = framebufferWidth;
             heightInPoints = framebufferHeight;
