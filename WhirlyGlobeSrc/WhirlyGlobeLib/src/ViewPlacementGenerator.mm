@@ -167,6 +167,8 @@ void ViewPlacementGenerator::generateDrawables(WhirlyKitRendererFrameInfo *frame
     {
         const ViewInstance &viewInst = *it;
         bool hidden = NO;
+        bool belowGlobe = NO;
+        bool shouldHide = (viewInst.view.superview.superview.subviews == 0);
         CGPoint screenPt;
         
         if (!it->active)
@@ -189,8 +191,26 @@ void ViewPlacementGenerator::generateDrawables(WhirlyKitRendererFrameInfo *frame
             {
                 // Make sure this one is facing toward the viewer
                 Point3f worldLoc3f(worldLoc.x(),worldLoc.y(),worldLoc.z());
-                if (CheckPointAndNormFacing(worldLoc3f,worldLoc3f.normalized(),frameInfo.viewAndModelMat,frameInfo.viewModelNormalMat) < 0.0)
-                    hidden = YES;
+                if (CheckPointAndNormFacing(worldLoc3f,worldLoc3f.normalized(),frameInfo.viewAndModelMat,frameInfo.viewModelNormalMat) < 0.0) {
+                    if (shouldHide) {
+                        hidden = YES;
+                    }
+                    else {
+                        belowGlobe = YES;
+                    }
+                }
+                
+                if (!shouldHide) {
+                    UIView *bottomView = [viewInst.view.superview.superview.subviews firstObject];
+                    UIView *topView = [viewInst.view.superview.superview.subviews lastObject];
+                    
+                    if (belowGlobe && viewInst.view.superview == topView) {
+                        [bottomView addSubview:viewInst.view];
+                    }
+                    else if (!belowGlobe && viewInst.view.superview == bottomView) {
+                        [topView addSubview:viewInst.view];
+                    }
+                }
             }
 
             if (!hidden)
